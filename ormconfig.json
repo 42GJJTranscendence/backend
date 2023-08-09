@@ -4,7 +4,7 @@
     "port": "5432",
     "username": "jaehyuki",
     "password": "1234",
-    "database": "MAIN",
+    "database": "main",
     "synchronize": "true",
     "logging": "true",
     "entities": ["./src/**/*.entity.{.tx,.js}", "./dist/**/*.entity.{.ts,.js}"]
