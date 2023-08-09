@@ -12,7 +12,6 @@ import { AppService } from './app.service';
     "password": "1234",
     "database": "MAIN",
     "synchronize": "true",
-    "logging": "true",
     "entities": ["./src/**/*.entity.{.tx,.js}", "./dist/**/*.entity.{.ts,.js}"]
 }),
 ],
