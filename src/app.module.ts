@@ -7,7 +7,7 @@ import { AppService } from './app.service';
   // imports: [TypeOrmModule.forRoot()],
   imports: [TypeOrmModule.forRoot({
     type: 'postgres', // Since we are using PostgreSQL.
-    host: 'localhost', // We are devoloping locally.
+    host: 'postgresql', // We are devoloping locally.
     port: 5432, // What we set in our docker-compose file.
     username: 'jaehyuki', // ""
     password: '1234', // "pretty straightforward haha"
