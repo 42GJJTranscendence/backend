@@ -2,19 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { typeOrmConfig } from './config/typeorm.config';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  // imports: [TypeOrmModule.forRoot()],
-  imports: [TypeOrmModule.forRoot({
-    type: 'postgres', // Since we are using PostgreSQL.
-    host: 'postgresql', // We are devoloping locally.
-    port: 5432, // What we set in our docker-compose file.
-    username: 'jaehyuki', // ""
-    password: '1234', // "pretty straightforward haha"
-    database: 'main', // db name.
-    autoLoadEntities: true, // help load entities automatically.
-    synchronize: true, // insures our entities are sync with the database every time we run our app.
-  })],
+  imports: [TypeOrmModule.forRoot(typeOrmConfig)
+    , UsersModule],
   controllers: [AppController],
   providers: [AppService],
 })
