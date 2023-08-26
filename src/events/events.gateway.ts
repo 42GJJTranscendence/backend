@@ -13,7 +13,7 @@ export class EventsGateway {
 
   @SubscribeMessage('ClientToServer')
   async handleMessage(@MessageBody() data) {
-    console.log(data);
-    this.server.emit('ServerToClient', data);
+    this.server.emit('ServerToClient', 'username: : ' + data.username);
+    this.server.emit('ServerToClient', 'message: : ' + data.message);
   }
 }
