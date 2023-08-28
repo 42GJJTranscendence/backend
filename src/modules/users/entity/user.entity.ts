@@ -5,8 +5,11 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ unique: true})
+  fortyTwoId: number;
+
   @Column({ unique: true })
-  userName: string;
+  username: string;
 
   @Column({nullable: true})
   password: string;

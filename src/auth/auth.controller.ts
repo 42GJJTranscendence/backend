@@ -15,17 +15,12 @@ export class AuthController {
             `https://api.intra.42.fr/oauth/authorize?client_id=${process.env.UID_42}&redirect_uri=${process.env.CALLBACK_URI}&scope=public&response_type=code`,
         )
     }
-    
-    // @Get('/42/callback')
-    // Test () {
-    //     return "gdgd";
-    // }
 
     @Get('/42/callback')
     async AuthRedirect(@Query('code') code:string, @Res() res) {
-
-        res.status(200).send('Code is ' + code);
-        // const user = await this.authService.authenticate(code, res);
+        // res.status(200).send(code);
+        const user = await this.authService.authenticate(code, res);
+        res.status(200).send(user);
         // if (user) {
         //     if (!user.otp_enabled)
         //         res.redirect(`http://${process.env.BACKEND_IP}/login?token=${user.token}`);
