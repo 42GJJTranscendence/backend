@@ -3,11 +3,11 @@ import { Socket } from 'socket.io';
 
 @Injectable()
 export class GameService {
+  private clients: Set<Socket> = new Set();
   private ballX: number = 0;
   private ballY: number = 0;
-  private ballSpeedX: number = 1;
+  private ballSpeedX: number = 10;
   private ballSpeedY: number = 1;
-  private clients: Set<Socket> = new Set();
 
   addClient(client: Socket) {
     this.clients.add(client);
@@ -30,11 +30,11 @@ export class GameService {
     this.ballY += this.ballSpeedY;
 
     // Ball collision with walls
-    if (this.ballX >= 100 || this.ballX <= 0) {
+    if (this.ballX >= 950 || this.ballX <= 0) {
       this.ballSpeedX *= -1;
     }
 
-    if (this.ballY >= 100 || this.ballY <= 0) {
+    if (this.ballY >= 950 || this.ballY <= 0) {
       this.ballSpeedY *= -1;
     }
   }

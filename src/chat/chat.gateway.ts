@@ -17,12 +17,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   handleConnection(client: Socket) {
-    // console.log(client);
+    this.chatService.addClient(client);
     this.server.emit('connection', 'connected');
   }
 
   handleDisconnect(client: Socket) {
-    // console.log(client);
+    this.chatService.removeClient(client);
     this.server.emit('connection', 'disconnected');
   }
 
