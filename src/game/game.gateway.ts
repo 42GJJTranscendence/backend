@@ -17,15 +17,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleConnection(client: Socket) {
     this.gameService.addClient(client);
+    this.server.to(client.id).emit('connected', client.id);
   }
 
   handleDisconnect(client: Socket) {
     this.gameService.removeClient(client);
   }
 
-  @SubscribeMessage('send')
+  @SubscribeMessage('ballPosition')
   handleChattingMessage(client: Socket, data: any): void {
-    console.log(data);
     const ballPosition = this.gameService.getBallPosition();
     this.server.to(client.id).emit('ballPosition', ballPosition);
   }

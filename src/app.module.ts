@@ -2,12 +2,11 @@ import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { EventsModule } from './events/events.module';
-import { GameGateway } from './game/game.gateway';
-import { GameService } from './game/game.service';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [EventsModule],
+  imports: [EventsModule, ChatModule],
   controllers: [AppController],
-  providers: [AppService, GameGateway, GameService],
+  providers: [AppService],
 })
 export class AppModule {}

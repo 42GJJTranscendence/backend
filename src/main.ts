@@ -6,11 +6,11 @@ import { GameService } from './game/game.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const gameService = app.get(GameService);
+  // const gameService = app.get(GameService);
 
   await app.listen(5000);
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  gameService.startGameLoop();
+  // gameService.startGameLoop();
 }
 bootstrap();
