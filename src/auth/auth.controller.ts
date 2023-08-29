@@ -28,7 +28,7 @@ export class AuthController {
     @Post('/signin')
     async SignInUser(@Body() signInRequestDto : SignInRequestDto, @Res() res) {
         console.log("username : ", signInRequestDto.username, "\npassword : ", signInRequestDto.password, "\neMail : ", signInRequestDto.email,"\nfortyTwoToken : ", signInRequestDto.fortyTwoToken);
-        const jwtAccessToken = this.authService.signInUser(signInRequestDto);
+        const jwtAccessToken = await this.authService.signInUser(signInRequestDto);
 
         // 쿠키 설정
         const cookieOptions = {
@@ -46,7 +46,7 @@ export class AuthController {
     }
 
     @Post('/login')
-    async CookieTest(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
+    async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
         // 쿠키 설정
         const cookieOptions = {
             httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
@@ -55,14 +55,35 @@ export class AuthController {
             // 다른 쿠키 옵션들도 설정 가능
         };
 
-        const jwtAccessToken = this.authService.validateUser(logInRequestDto);
+        const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
-        res.cookie('access_token', jwtAccessToken, cookieOptions);
 
+        res.cookie('access_token', jwtAccessToken, cookieOptions);
         // 리다이렉트
-        // res.redirect(`${process.env.FRONT_HOME_URL}`);s
-        // res.send(jwtAccessToken);
+        // return res.json(jwtAccessToken);
+        res.redirect(`${process.env.FRONT_HOME_URL}`);
+    }
+
+    @Get('/cookie')
+    async CookieTest(@Res() res) : Promise<any>{
+        // 쿠키 설정
+        const cookieOptions = {
+            httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
+            maxAge: 3600, // 쿠키 유효 기간 (초)
+            // secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
+            // 다른 쿠키 옵션들도 설정 가능
+        };
+
+        const logInRequestDto = new LogInRequestDto();
+        logInRequestDto.username = 'jaehyuki';
+        logInRequestDto.password = '1234';
+        const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
+
+        console.log('ACCESS_TOKEN : ', jwtAccessToken);
+
+        res.cookie('access_token', jwtAccessToken, cookieOptions);
+        // 리다이렉트
         // return res.json(jwtAccessToken);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }

@@ -118,7 +118,7 @@ export class AuthService {
         }
     
         const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
-    
-        return Promise.resolve(this.jwtService.sign(payload));
+        
+        return Promise.resolve(await this.jwtService.sign(payload));
     }
 }
