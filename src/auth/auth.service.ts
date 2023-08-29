@@ -1,15 +1,20 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { User } from "src/modules/users/entity/user.entity";
 import { FortyTwoTokenJsonInterface } from "src/common/api.object";
-import { FortyTwoUserDto } from "./auth.FortyTwoUser.dto";
+import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
 import { UserDto } from "src/modules/users/dto/user.dto";
 import { UserService } from "src/modules/users/service/user.service";
-
+import * as bcrypt from 'bcrypt';
+import { Payload } from "./scurity/payload.interface";
+import { JwtService } from "@nestjs/jwt";
 
 @Injectable()
 export class AuthService {
 
-    constructor(private userService : UserService) {}
+    constructor(
+        private userService : UserService,
+        private jwtService : JwtService,
+    ) {}
 
     async getToken(code: string, res: Response): Promise<string> {
         console.log("now retrieving token...");
@@ -42,7 +47,7 @@ export class AuthService {
         return Promise.resolve(token);
     }
 
-    async getUser(token: string): Promise<String>{//Promise<User | undefined> {
+    async getUser(token: string): Promise<FortyTwoUserDto | undefined> {
         
         //authenticate user with 42intra token
         const options = {
@@ -62,12 +67,8 @@ export class AuthService {
                     const id42 = json.id;
                     const username = json.login;
                     const imageUrl = json.image.link;
-                    console.log("id:", id42, "username:", username, "token:", token, "imageUrl", imageUrl);
+                    console.log("Get User\n{", "\nid:", id42, "\nusername:", username, "\ntoken:", token, "\nimageUrl: ", imageUrl), "\n}";
                     return json;
-                    // exchange intra token with jwt
-                    // const secret = authenticator.generateSecret();
-                    // const jwtoken = jwt.sign({userId: id42}, process.env.JWT_SECRET, {expiresIn: "3d"})
-                    // return await this.logUser(id42, username, jwtoken);
                 } else
                     return undefined;
             })
@@ -81,22 +82,43 @@ export class AuthService {
         const token = await this.getToken(code, res);
         if (token == '')
             return undefined;
-        return this.getUser(token);
+        return token;
     }
 
-    async validateUser(userDTO: UserDto): Promise<{accessToken: string} | undefined> {
-        let userFind: User = await this.userService.findOneByFields({
-            where: { username: userDTO.username }
-        });
-        const validatePassword = await bcrypt.compare(userDTO.password, userFind.password);
+    async signInUser(signInRequestDto : SignInRequestDto): Promise<String | undefined> {//Promise<User | undefined> {
+        console.log("fortyTwoToken", signInRequestDto.fortyTwoToken);
+        const fortyTwoUserDto = await this.getUser(signInRequestDto.fortyTwoToken);
+        const user = new User();
+        user.username=signInRequestDto.username;
+        user.eMail=signInRequestDto.email;
+        user.imageUrl = fortyTwoUserDto.image.link;
+        user.fortyTwoId = fortyTwoUserDto.id;
+
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(signInRequestDto.password, saltRounds);
+        user.password = hashedPassword;
+
+        const createdUser = await this.userService.createUser(user);
+        // id: number;
+        // fortyTwoId: number;
+        // username: string;
+        // imageUrl: string;
+        // roleType: string;
+        const payload: Payload = { id: createdUser.id, username: createdUser.username, fortyTwoId: createdUser.fortyTwoId};
+        
+        return Promise.resolve(this.jwtService.sign(payload));
+        // return "sample_token";
+    }
+
+    async validateUser(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
+        let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
+        const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
             throw new UnauthorizedException();
         }
     
-        const payload: Payload = { id: userFind.id, username: userFind.username };
+        const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
     
-        return {
-            accessToken: this.jwtService.sign(payload),
-        };
+        return Promise.resolve(this.jwtService.sign(payload));
     }
 }
