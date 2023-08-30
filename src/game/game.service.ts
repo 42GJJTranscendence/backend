@@ -8,21 +8,35 @@ export class GameService {
   private ballY: number = 0;
   private ballSpeedX: number = 10;
   private ballSpeedY: number = 1;
+  private moveball: NodeJS.Timer;
+  private ballStatus: boolean = false;
+  private playerPosition: number[] = [450, 450];
 
   addClient(client: Socket) {
     this.clients.add(client);
   }
 
   removeClient(client: Socket) {
+    this.stopGameLoop();
     this.clients.delete(client);
   }
 
   startGameLoop() {
-    setInterval(() => {
-      this.updateBallPosition();
-      const ballPosition = this.getBallPosition();
-      this.broadcastBallPosition(ballPosition);
-    }, 1000 / 60); // 60 FPS
+    if (!this.ballStatus) {
+      this.moveball = setInterval(() => {
+        this.updateBallPosition();
+        const ballPosition = this.getBallPosition();
+        this.broadcastBallPosition(ballPosition);
+      }, 1000 / 60); // 60 FPS
+      this.ballStatus = true;
+    }
+  }
+
+  stopGameLoop() {
+    if (this.ballStatus) {
+      clearInterval(this.moveball);
+      this.ballStatus = false;
+    }
   }
 
   updateBallPosition() {
@@ -47,5 +61,10 @@ export class GameService {
     for (const client of this.clients) {
       client.emit('ballPosition', ballPosition);
     }
+  }
+  movePlayerPosition(client: Socket, data: any) {
+    if (data == 'up') this.playerPosition[0]--;
+    else if (data == 'down') this.playerPosition[0]++;
+    client.emit('playerPosition', this.playerPosition[0]);
   }
 }

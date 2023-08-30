@@ -32,9 +32,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('stop')
   handleStopMessage(client: Socket, data: any): void {
-    this.gameService.startGameLoop();
+    this.gameService.stopGameLoop();
   }
 
-  @SubscribeMessage('ballPosition')
-  handleChattingMessage(client: Socket, data: any): void {}
+  @SubscribeMessage('player')
+  handlePlayerMessage(client: Socket, data: any): void {
+    this.gameService.movePlayerPosition(client, data);
+  }
 }
