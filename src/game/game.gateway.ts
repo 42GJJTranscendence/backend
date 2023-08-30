@@ -36,9 +36,5 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('ballPosition')
-  handleChattingMessage(client: Socket, data: any): void {
-    // const ballPosition = this.gameService.getBallPosition();
-    // this.server.to(client.id).emit('ballPosition', ballPosition);
-    // return 'Hello world!';
-  }
+  handleChattingMessage(client: Socket, data: any): void {}
 }
