@@ -39,10 +39,11 @@ export class AuthController {
         };
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
-        res.cookie('access_token', jwtAccessToken, cookieOptions);
+        res.send(jwtAccessToken);
+        // res.cookie('access_token', jwtAccessToken, cookieOptions);
 
         // 리다이렉트
-        res.redirect(`${process.env.FRONT_HOME_URL}`);
+        // res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 
     @Post('/login')
@@ -58,10 +59,11 @@ export class AuthController {
         const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
+        res.send(jwtAccessToken);
 
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         // 리다이렉트
-        // return res.json(jwtAccessToken);
+        return res.json(jwtAccessToken);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 
@@ -83,8 +85,6 @@ export class AuthController {
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
 
         res.cookie('access_token', jwtAccessToken, cookieOptions);
-        // 리다이렉트
-        // return res.json(jwtAccessToken);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 }

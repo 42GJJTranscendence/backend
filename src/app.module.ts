@@ -6,6 +6,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
@@ -13,7 +14,7 @@ import { JwtModule } from '@nestjs/jwt';
     , JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '300s' },
-    })],
+    }), EventsModule],
   controllers: [AppController],
   providers: [AppService],
 })

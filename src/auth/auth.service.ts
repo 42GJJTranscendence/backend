@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { User } from "src/modules/users/entity/user.entity";
-import { FortyTwoTokenJsonInterface } from "src/common/api.object";
-import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
+import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
 import { UserDto } from "src/modules/users/dto/user.dto";
 import { UserService } from "src/modules/users/service/user.service";
 import * as bcrypt from 'bcrypt';
@@ -99,15 +98,10 @@ export class AuthService {
         user.password = hashedPassword;
 
         const createdUser = await this.userService.createUser(user);
-        // id: number;
-        // fortyTwoId: number;
-        // username: string;
-        // imageUrl: string;
-        // roleType: string;
+
         const payload: Payload = { id: createdUser.id, username: createdUser.username, fortyTwoId: createdUser.fortyTwoId};
         
         return Promise.resolve(this.jwtService.sign(payload));
-        // return "sample_token";
     }
 
     async validateUser(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
