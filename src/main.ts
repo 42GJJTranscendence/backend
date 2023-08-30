@@ -1,15 +1,14 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { IoAdapter } from '@nestjs/platform-socket.io';
+import { Logger } from '@nestjs/common';
+
+const port = process.env.PORT;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // const gameService = app.get(GameService);
-
-  await app.listen(5000);
-  app.useWebSocketAdapter(new IoAdapter(app));
-
-  // gameService.startGameLoop();
+  app.enableCors();
+  await app.listen(port);
+  Logger.log(`Server running on http://localhost:${port}`, 'Bootstrap');
 }
 bootstrap();
