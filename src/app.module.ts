@@ -11,10 +11,7 @@ import { EventsModule } from './events/events.module';
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
     , UsersModule, AuthModule
-    , JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '300s' },
-    }), EventsModule],
+    , EventsModule],
   controllers: [AppController],
   providers: [AppService],
 })

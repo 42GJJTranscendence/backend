@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
-import { profileEnd } from "console";
+import { AuthGuard } from "@nestjs/passport";
+import { User } from "src/modules/users/entity/user.entity";
+import { GetUser } from "./scurity/get-user.decorator";
 
 
 @Controller('auth')
@@ -48,6 +50,7 @@ export class AuthController {
 
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
+        console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
         // 쿠키 설정
         const cookieOptions = {
             httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
@@ -86,5 +89,11 @@ export class AuthController {
 
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
+    }
+
+    @Get('/test')
+    @UseGuards(AuthGuard())
+    async AuthTest(@GetUser() user : User) {
+        console.log('req', user);
     }
 }
