@@ -62,6 +62,7 @@ export class GameService {
       client.emit('ballPosition', ballPosition);
     }
   }
+
   movePlayerPosition(client: Socket, data: any) {
     if (data == 'up') this.playerPosition[0]--;
     else if (data == 'down') this.playerPosition[0]++;
