@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 
 @Injectable()
 export class ChatService {
   private clients: Set<Socket> = new Set();
   private history = [];
+  // private chat = new Server(8080, {});
+
   addClient(client: Socket) {
     this.clients.add(client);
   }
