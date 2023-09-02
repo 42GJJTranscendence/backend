@@ -9,7 +9,7 @@ import { ChatService } from './chat.service';
 import { Server } from 'http';
 import { Socket } from 'socket.io';
 
-@WebSocketGateway(8080)
+@WebSocketGateway(8080, { namespace: 'chat' })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly chatService: ChatService) {}
 
