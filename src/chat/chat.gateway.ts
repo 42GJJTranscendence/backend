@@ -34,4 +34,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(this.chatService.getHistory());
     return 'Hello world!';
   }
+
+  joinRoom(roomName: string, client: Socket): void {
+    const room = this.chatService.getRoomClients(roomName);
+    if (room) {
+      client.join(roomName);
+      room.add(client);
+    }
+  }
+
+  leaveRoom(roomName: string, client: Socket): void {
+    client.leave(roomName);
+    const room = this.chatService.getRoomClients(roomName);
+    if (room) {
+      room.delete(client);
+    }
+  }
 }

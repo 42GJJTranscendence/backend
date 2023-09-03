@@ -10,7 +10,7 @@ export class GameService {
   private ballSpeedY: number = 1;
   private moveball: NodeJS.Timer;
   private ballStatus: boolean = false;
-  private playerPosition: number[] = [450, 450];
+  private playerPosition = { x: 100, y: 100 };
 
   addClient(client: Socket) {
     this.clients.add(client);
@@ -63,9 +63,19 @@ export class GameService {
     }
   }
 
+  broadcastPlayerPosition(ballPosition: { x: number; y: number }) {
+    for (const client of this.clients) {
+      client.emit('playerPosition', ballPosition);
+    }
+  }
+
   movePlayerPosition(client: Socket, data: any) {
-    if (data == 'up') this.playerPosition[0]--;
-    else if (data == 'down') this.playerPosition[0]++;
-    client.emit('playerPosition', this.playerPosition[0]);
+    if (data == 'up') this.playerPosition.x -= 10;
+    else if (data == 'down') this.playerPosition.x += 10;
+    console.log(this.playerPosition);
+  }
+
+  getPlayerPosition() {
+    return this.playerPosition;
   }
 }
