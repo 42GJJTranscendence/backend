@@ -35,11 +35,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.gameService.stopGameLoop();
   }
 
-  @SubscribeMessage('player')
-  async handlePlayerMessage(client: Socket, data: any): Promise<void> {
-    // console.log(client, data);
-    this.gameService.movePlayerPosition(client, data);
-    // this.server.emit('playerPosition', this.gameService.getPlayerPosition);
+  @SubscribeMessage('leftplayer')
+  async handleLeftPlayerMessage(client: Socket, data: any): Promise<void> {
+    this.gameService.moveLeftPlayerPosition(client, data);
+    this.gameService.broadcastPlayerPosition(
+      this.gameService.getPlayerPosition(),
+    );
+  }
+  @SubscribeMessage('rightplayer')
+  async handleRightPlayerMessage(client: Socket, data: any): Promise<void> {
+    this.gameService.moveRightPlayerPosition(client, data);
     this.gameService.broadcastPlayerPosition(
       this.gameService.getPlayerPosition(),
     );
