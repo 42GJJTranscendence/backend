@@ -34,9 +34,6 @@ export class GameService {
       this.moveball = setInterval(() => {
         this.updateBallPosition();
         const ballPosition = this.getBallPosition();
-        if (this.gameEndCheck(ballPosition)) {
-          this.stopGameLoop();
-        }
         this.broadcastBallPosition(ballPosition);
       }, 1000 / 60); // 60 FPS
       this.ballStatus = true;
