@@ -119,12 +119,18 @@ export class GameService {
   moveLeftPlayerPosition(client: Socket, data: any) {
     if (data === 'up') this.leftPlayerPosition.x -= 30;
     else if (data === 'down') this.leftPlayerPosition.x += 30;
+    if (this.leftPlayerPosition.x < 0) this.leftPlayerPosition.x = 0;
+    if (this.leftPlayerPosition.x + this.paddleLength > 1000)
+      this.leftPlayerPosition.x = 1000 - this.paddleLength;
     console.log(this.leftPlayerPosition);
   }
 
   moveRightPlayerPosition(client: Socket, data: any) {
     if (data === 'up') this.rightPlayerPosition.x -= 30;
     else if (data === 'down') this.rightPlayerPosition.x += 30;
+    if (this.rightPlayerPosition.x < 0) this.rightPlayerPosition.x = 0;
+    if (this.rightPlayerPosition.x + this.paddleLength > 1000)
+      this.rightPlayerPosition.x = 1000 - this.paddleLength;
     console.log(this.rightPlayerPosition);
   }
 
