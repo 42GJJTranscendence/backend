@@ -31,7 +31,7 @@ export class Ball {
 		this.speed.y = y;
     }
 
-	resetBall({score})
+	resetBall(score: number)
 	{
 		this.position.x = 480;
 		this.position.y = 480;

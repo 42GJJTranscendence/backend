@@ -18,28 +18,26 @@ export class GameService {
   
 	addClient(client: Socket)
 	{
-		console.log("addClient")
-		this.ball.setBallPostion({x: 0, y: 0})
+		console.log("client socket id : " + client.id)
+		console.log("queue size : " + this.matchingQueue.size())
 		if (this.matchingQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
 		this.matchingQueue.enqueue(client);	
-		while (true)
-		{
-			if (this.matchingQueue.size() > 1)
-			{
-				this.homePlayer.socket = this.matchingQueue.dequeue();
-				this.awayPlayer.socket = this.matchingQueue.dequeue();
-				const roomName = `game-${this.homePlayer.socket}-${this.awayPlayer.socket}`
-				this.homePlayer.socket.join(roomName)
-				this.awayPlayer.socket.join(roomName)
-				this.homePlayer.socket.to(roomName).emit("game-start");
-				this.awayPlayer.socket.to(roomName).emit("game-start");
-				this.startGameLoop();
-				return ;
-			}
+		if (this.matchingQueue.size() >= 2) {
+			this.homePlayer.socket = this.matchingQueue.dequeue();
+			this.awayPlayer.socket = this.matchingQueue.dequeue();
+			const roomName = `game-${this.homePlayer.socket.id}-${this.awayPlayer.socket.id}`;
+			
+			this.homePlayer.socket.join(roomName);
+			this.awayPlayer.socket.join(roomName);
+			
+			this.homePlayer.socket.to(roomName).emit("game-start");
+			this.awayPlayer.socket.to(roomName).emit("game-start");
+			
+			this.startGameLoop();
 		}
 	}
 
@@ -81,9 +79,10 @@ export class GameService {
 				this.stopGameLoop();
 				this.scores.home++;
 				this.broadcastScores();
+				this.ball.resetBall(this.scores.home + this.scores.away);
 			}
 		}
-		if (this.ball.position.y > 970)
+		if (this.ball.position.y > 930)
 		{
 			if (this.ball.position.x > this.awayPlayer.position.x 
 				&& this.ball.position.x < this.awayPlayer.position.x + this.awayPlayer.paddleLength)
