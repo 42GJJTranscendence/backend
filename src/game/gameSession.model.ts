@@ -9,8 +9,9 @@ export class GameSession {
     private moveBall: NodeJS.Timer;
     private ball: Ball = new Ball();
     private scores = { home: 0, away: 0 };
+    private onGameEnd: (session: GameSession) => void;
 
-    constructor(homeSocket: Socket, awaySocket: Socket) {
+    constructor(homeSocket: Socket, awaySocket: Socket, onGameEnd: (session: GameSession) => void) {
         this.homePlayer = new Player({ x: 400, y: 0 }, 200, homeSocket);
         this.awayPlayer = new Player({ x: 400, y: 980 }, 200, awaySocket);
         this.roomName = `game-${homeSocket.id}-${awaySocket.id}`;
@@ -19,6 +20,7 @@ export class GameSession {
         awaySocket.join(this.roomName);
 
         this.startGameLoop();
+        this.onGameEnd = onGameEnd;
     }
 
     includesClient(client: Socket): boolean {
@@ -93,9 +95,17 @@ export class GameSession {
             const result = playerType === 'home' ? 'win' : 'lose';
             this.homePlayer.socket.emit('game-result', result);
             this.awayPlayer.socket.emit('game-result', result === 'win' ? 'lose' : 'win');
+            // 나중에 여기서 Match DB에 저장해야함
+            this.onGameEnd(this);
+            this.leaveRoom();
             return;
         }
         this.startGameLoop();
+    }
+
+    leaveRoom() {
+        this.homePlayer.socket.leave(this.roomName);
+        this.awayPlayer.socket.leave(this.roomName);
     }
     
 	movePlayerPosition(client: Socket, data: any)

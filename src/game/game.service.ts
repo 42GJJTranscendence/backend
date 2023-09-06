@@ -7,6 +7,8 @@ import { Socket } from 'socket.io';
 export class GameService {
 	private matchingQueue: Queue<Socket> = new Queue();
     private gameSessions: GameSession[] = [];
+	
+	// disconnect 될 때
 	private endSessionForClient(client: Socket) {
 		const session = this.gameSessions.find(session => session.includesClient(client));
 		if (session) {
@@ -14,12 +16,19 @@ export class GameService {
 			this.gameSessions = this.gameSessions.filter(s => s !== session);
 		}
 	}
+	
+	// game이 끝날 때
+	private endSession = (session: GameSession) => {
+        session.stopGameLoop();
+        this.gameSessions = this.gameSessions.filter(s => s !== session);
+    }
+
 	private tryMatchClients() {
 		if (this.matchingQueue.size() >= 2) {
 			const homePlayerSocket = this.matchingQueue.dequeue();
 			const awayPlayerSocket = this.matchingQueue.dequeue();
 
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket);
+			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession);
 			this.gameSessions.push(gameSession);
 		}
 	}
