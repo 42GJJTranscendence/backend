@@ -37,7 +37,8 @@ export class GameService {
 		this.tryMatchClients();
 	}
 
-    removeClient(client: Socket) {
+    removeClient(client: Socket) 
+	{
         this.matchingQueue.remove(client);
         this.endSessionForClient(client);
     }
