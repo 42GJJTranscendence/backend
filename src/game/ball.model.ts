@@ -10,7 +10,7 @@ export class Ball {
   
     constructor() {
       this.position = { x: 480, y: 480 };
-      this.speed = { x: 10, y: 15 };
+      this.speed = { x: 5, y: 5 };
       this.status = false;
     }
 
@@ -31,19 +31,11 @@ export class Ball {
 		this.speed.y = y;
     }
 
-	resetBall(score: number)
+	resetBall()
 	{
 		this.position.x = 480;
 		this.position.y = 480;
-		if (score % 2 == 0)
-		{
-			this.speed.x = 10
-			this.speed.y = 15;
-		}
-		else
-		{
-			this.speed.x = 10;
-			this.speed.y = -15;
-		}
+		this.speed.x = this.speed.x * -1;
+		this.speed.y = this.speed.y * -1;
 	}
   }

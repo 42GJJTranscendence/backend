@@ -29,17 +29,18 @@ export class GameSession {
 
     async startGameLoop() 
 	{
-		if (!this.ball.status) 
+		if (!this.ball.status)
 		{
-			this.ball.setBallPostion({x: 480, y: 480});
-			this.moveBall = setInterval(() => {
-				this.updateGame();
-				this.broadcastBallPosition(this.ball.getBallPosition());
-			}, 1000 / 60); // 60 FPS
-			this.ball.status = true;
+            setTimeout(() => {
+                this.ball.setBallPostion({x: 480, y: 480});
+                this.moveBall = setInterval(() => {
+                    this.updateGame();
+                    this.broadcastBallPosition(this.ball.getBallPosition());
+                }, 1000 / 60); // 60 FPS
+                this.ball.status = true;
+            }, 3000);
 		}
 	}
-
 
 	stopGameLoop() 
 	{
@@ -52,12 +53,12 @@ export class GameSession {
 
 	updateGame()
 	{
-		if (this.ball.position.x >= 950 || this.ball.position.x <= 0)
+		if (this.ball.position.x >= 950 || this.ball.position.x <= 5)
 		{
 			this.ball.speed.x *= -1;
 		}
 
-		if (this.ball.position.y < 0)
+		if (this.ball.position.y < 5)
 		{
 			if (this.ball.position.x > this.homePlayer.position.x 
 				&& this.ball.position.x < this.homePlayer.position.x + this.homePlayer.paddleLength)
@@ -69,7 +70,14 @@ export class GameSession {
 				this.stopGameLoop();
 				this.scores.home++;
 				this.broadcastScores();
-				this.ball.resetBall(this.scores.home + this.scores.away);
+				this.ball.resetBall();
+                if (this.scores.home >= 3)
+                {
+                    this.stopGameLoop();
+                    this.homePlayer.socket.emit('game-result', 'win');
+                    this.awayPlayer.socket.emit('game-result', 'lose');
+                    return ;
+                }
 				this.startGameLoop();
 			}
 		}
@@ -85,7 +93,14 @@ export class GameSession {
 				this.stopGameLoop();
 				this.scores.away++;
 				this.broadcastScores();
-				this.ball.resetBall(this.scores.home + this.scores.away);
+				this.ball.resetBall();
+                if (this.scores.away >= 3)
+                {
+                    this.stopGameLoop();
+                    this.homePlayer.socket.emit('game-result', 'lose');
+                    this.awayPlayer.socket.emit('game-result', 'win');
+                    return ;
+                }
 				this.startGameLoop();
 			}
 		}
