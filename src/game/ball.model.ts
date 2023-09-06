@@ -10,7 +10,7 @@ export class Ball {
   
     constructor() {
       this.position = { x: 480, y: 480 };
-      this.speed = { x: 5, y: 5 };
+      this.speed = { x: 5, y: 7 };
       this.status = false;
     }
 
@@ -35,7 +35,7 @@ export class Ball {
 	{
 		this.position.x = 480;
 		this.position.y = 480;
-		this.speed.x = this.speed.x * -1;
+		this.speed.x = this.speed.x;
 		this.speed.y = this.speed.y * -1;
 	}
   }

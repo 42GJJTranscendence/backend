@@ -49,63 +49,55 @@ export class GameSession {
 		}
 	}
 
-	updateGame()
-	{
-		if (this.ball.position.x >= 950 || this.ball.position.x <= 0)
-		{
-			this.ball.speed.x *= -1;
-		}
-
-		if (this.ball.position.y < 0)
-		{
-			if (this.ball.position.x > this.homePlayer.position.x 
-				&& this.ball.position.x < this.homePlayer.position.x + this.homePlayer.paddleLength)
-			{
-				this.ball.speed.y *= -1;
-			}
-			else
-			{
-				this.stopGameLoop();
-				this.scores.home++;
-				this.broadcastScores();
-				this.ball.resetBall();
-                if (this.scores.home >= 3)
-                {
-                    this.stopGameLoop();
-                    this.homePlayer.socket.emit('game-result', 'win');
-                    this.awayPlayer.socket.emit('game-result', 'lose');
-                    return ;
-                }
-				this.startGameLoop();
-			}
-		}
-		if (this.ball.position.y > 930)
-		{
-			if (this.ball.position.x > this.awayPlayer.position.x 
-				&& this.ball.position.x < this.awayPlayer.position.x + this.awayPlayer.paddleLength)
-			{
-				this.ball.speed.y *= -1;
-			}
-			else
-			{
-				this.stopGameLoop();
-				this.scores.away++;
-				this.broadcastScores();
-				this.ball.resetBall();
-                if (this.scores.away >= 3)
-                {
-                    this.stopGameLoop();
-                    this.homePlayer.socket.emit('game-result', 'lose');
-                    this.awayPlayer.socket.emit('game-result', 'win');
-                    return ;
-                }
-				this.startGameLoop();
-			}
-		}
-		this.ball.position.x += this.ball.speed.x;
-		this.ball.position.y += this.ball.speed.y;
-	}
-
+    updateGame() {
+        this.checkBallBounds();
+        this.updateBallPosition();
+    
+        if (this.ball.position.y < 0) {
+            if (this.isBallCollidingWithPaddle(this.homePlayer)) {
+                this.ball.speed.y *= -1;
+            } else {
+                this.handleScoreAndResult('home');
+            }
+        } else if (this.ball.position.y > 930) {
+            if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
+                this.ball.speed.y *= -1;
+            } else {
+                this.handleScoreAndResult('away');
+            }
+        }
+    }
+    
+    checkBallBounds() {
+        if (this.ball.position.x >= 950 || this.ball.position.x <= 0) {
+            this.ball.speed.x *= -1;
+        }
+    }
+    
+    updateBallPosition() {
+        this.ball.position.x += this.ball.speed.x;
+        this.ball.position.y += this.ball.speed.y;
+    }
+    
+    isBallCollidingWithPaddle(player: Player): boolean {
+        return this.ball.position.x > player.position.x && 
+               this.ball.position.x < player.position.x + player.paddleLength;
+    }
+    
+    handleScoreAndResult(playerType: 'home' | 'away') {
+        this.ball.resetBall();
+        this.stopGameLoop();
+        this.scores[playerType]++;
+        this.broadcastScores();
+        if (this.scores[playerType] >= 3) {
+            const result = playerType === 'home' ? 'win' : 'lose';
+            this.homePlayer.socket.emit('game-result', result);
+            this.awayPlayer.socket.emit('game-result', result === 'win' ? 'lose' : 'win');
+            return;
+        }
+        this.startGameLoop();
+    }
+    
 	movePlayerPosition(client: Socket, data: any)
 	{
 		if (client == this.homePlayer.socket)
