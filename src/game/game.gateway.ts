@@ -24,6 +24,5 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('player')
   async handlePlayerMessage(client: Socket, data: any): Promise<void> {
     this.gameService.movePlayerPosition(client, data);
-    this.gameService.broadcastPlayerPosition();
   }
 }

@@ -37,7 +37,7 @@ export class Ball {
 		this.position.y = 480;
 		if (score % 2 == 0)
 		{
-			this.speed.x = 10;
+			this.speed.x = 10
 			this.speed.y = 15;
 		}
 		else
