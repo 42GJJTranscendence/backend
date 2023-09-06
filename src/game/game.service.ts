@@ -1,81 +1,148 @@
+import { Queue } from 'src/utils/queue';
+import { Ball } from './ball.model'
+import { Player } from './player.model'
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { throws } from 'assert';
+import { log } from 'console';
+
 
 @Injectable()
 export class GameService {
-  private clients: Set<Socket> = new Set();
-  private ballX: number = 0;
-  private ballY: number = 0;
-  private ballSpeedX: number = 10;
-  private ballSpeedY: number = 1;
-  private moveball: NodeJS.Timer;
-  private ballStatus: boolean = false;
-  private playerPosition = { x: 100, y: 100 };
+	private matchingQueue: Queue<Socket> = new Queue();
+	private moveBall: NodeJS.Timer;
+	private ball: Ball = new Ball();
+	private homePlayer: Player = new Player({ x: 400, y: 0 }, 200);
+	private awayPlayer: Player = new Player({ x: 400, y: 980 }, 200);
+	private scores = { home: 0, away: 0 };
+  
+	addClient(client: Socket)
+	{
+		console.log("addClient")
+		this.ball.setBallPostion({x: 0, y: 0})
+		if (this.matchingQueue.contains(client))
+		{
+			client.emit('error', { message: 'You are already in the queue!' });
+			return;
+		}
+		this.matchingQueue.enqueue(client);	
+		while (true)
+		{
+			if (this.matchingQueue.size() > 1)
+			{
+				this.homePlayer.socket = this.matchingQueue.dequeue();
+				this.awayPlayer.socket = this.matchingQueue.dequeue();
+				const roomName = `game-${this.homePlayer.socket}-${this.awayPlayer.socket}`
+				this.homePlayer.socket.join(roomName)
+				this.awayPlayer.socket.join(roomName)
+				this.homePlayer.socket.to(roomName).emit("game-start");
+				this.awayPlayer.socket.to(roomName).emit("game-start");
+				this.startGameLoop();
+				return ;
+			}
+		}
+	}
 
-  addClient(client: Socket) {
-    this.clients.add(client);
-  }
+	removeClient(client: Socket) 
+	{
+		this.stopGameLoop();
+		this.matchingQueue.remove(client);
+	}
 
-  removeClient(client: Socket) {
-    this.stopGameLoop();
-    this.clients.delete(client);
-  }
+	startGameLoop() 
+	{
+		if (!this.ball.status) 
+		{
+			this.ball.setBallPostion({x: 480, y: 480});
+			this.moveBall = setInterval(() => {
+				this.updateGame();
+				this.broadcastBallPosition(this.ball.getBallPosition());
+			}, 1000 / 60); // 60 FPS
+			this.ball.status = true;
+		}
+	}
 
-  startGameLoop() {
-    if (!this.ballStatus) {
-      this.moveball = setInterval(() => {
-        this.updateBallPosition();
-        const ballPosition = this.getBallPosition();
-        this.broadcastBallPosition(ballPosition);
-      }, 1000 / 60); // 60 FPS
-      this.ballStatus = true;
-    }
-  }
+	updateGame()
+	{
+		if (this.ball.position.x >= 950 || this.ball.position.x <= 0)
+		{
+			this.ball.speed.x *= -1;
+		}
 
-  stopGameLoop() {
-    if (this.ballStatus) {
-      clearInterval(this.moveball);
-      this.ballStatus = false;
-    }
-  }
+		if (this.ball.position.y < 0)
+		{
+			if (this.ball.position.x > this.homePlayer.position.x 
+				&& this.ball.position.x < this.homePlayer.position.x + this.homePlayer.paddleLength)
+			{
+				this.ball.speed.y *= -1;
+			}
+			else
+			{
+				this.stopGameLoop();
+				this.scores.home++;
+				this.broadcastScores();
+			}
+		}
+		if (this.ball.position.y > 970)
+		{
+			if (this.ball.position.x > this.awayPlayer.position.x 
+				&& this.ball.position.x < this.awayPlayer.position.x + this.awayPlayer.paddleLength)
+			{
+				this.ball.speed.y *= -1;
+			}
+			else
+			{
+				this.stopGameLoop();
+				this.scores.home++;
+				this.broadcastScores();
+			}
+		}
+		this.ball.position.x += this.ball.speed.x;
+		this.ball.position.y += this.ball.speed.y;
+	}
 
-  updateBallPosition() {
-    this.ballX += this.ballSpeedX;
-    this.ballY += this.ballSpeedY;
+	stopGameLoop() 
+	{
+		if (this.ball.status) 
+		{
+			clearInterval(this.moveBall);
+			this.ball.status = false;
+		}
+	}
 
-    // Ball collision with walls
-    if (this.ballX >= 950 || this.ballX <= 0) {
-      this.ballSpeedX *= -1;
-    }
+	broadcastBallPosition(ballPosition: { x: number; y: number }) {
+		this.homePlayer.socket.emit('ballPosition', ballPosition);
+		this.awayPlayer.socket.emit('ballPosition', ballPosition);
+	}
 
-    if (this.ballY >= 950 || this.ballY <= 0) {
-      this.ballSpeedY *= -1;
-    }
-  }
+	broadcastPlayerPosition() {
+		this.homePlayer.socket.emit('playerPosition', this.homePlayer.position);
+		this.awayPlayer.socket.emit('playerPosition', this.awayPlayer.position);
+	}
 
-  getBallPosition() {
-    return { x: this.ballX, y: this.ballY };
-  }
+	broadcastScores() 
+	{
+		this.homePlayer.socket.emit('scores', this.scores);
+		this.awayPlayer.socket.emit('scores', this.scores);
+	}
 
-  broadcastBallPosition(ballPosition: { x: number; y: number }) {
-    for (const client of this.clients) {
-      client.emit('ballPosition', ballPosition);
-    }
-  }
-
-  broadcastPlayerPosition(ballPosition: { x: number; y: number }) {
-    for (const client of this.clients) {
-      client.emit('playerPosition', ballPosition);
-    }
-  }
-
-  movePlayerPosition(client: Socket, data: any) {
-    if (data == 'up') this.playerPosition.x -= 10;
-    else if (data == 'down') this.playerPosition.x += 10;
-    console.log(this.playerPosition);
-  }
-
-  getPlayerPosition() {
-    return this.playerPosition;
-  }
+	movePlayerPosition(client: Socket, data: any)
+	{
+		if (client == this.homePlayer.socket)
+		{
+			if (data === 'up') this.homePlayer.position.x -= 30;
+			else if (data === 'down') this.homePlayer.position.x += 30;
+			if (this.homePlayer.position.x < 0) this.homePlayer.position.x = 0;
+			if (this.homePlayer.position.x > 1000 - this.homePlayer.paddleLength)
+				this.homePlayer.position.x = 1000 - this.homePlayer.paddleLength;
+		}
+		else if (client == this.awayPlayer.socket)
+		{
+			if (data === 'up') this.awayPlayer.position.x -= 30;
+			else if (data === 'down') this.awayPlayer.position.x += 30;
+			if (this.awayPlayer.position.x < 0) this.awayPlayer.position.x = 0;
+			if (this.awayPlayer.position.x + this.awayPlayer.paddleLength > 1000)
+				this.awayPlayer.position.x = 1000 - this.awayPlayer.paddleLength;
+		}
+	}
 }
