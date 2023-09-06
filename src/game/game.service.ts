@@ -12,8 +12,10 @@ export class GameService {
   private ballX: number = 0;
   private ballY: number = 0;
   private paddleLength: number = 200;
-  private ballSpeedX: number = 10;
-  private ballSpeedY: number = 15;
+  private ballSpeed: number = 10;
+  private balldirection: number = 0.5 * Math.PI;
+  private ballSpeedX: number = this.ballSpeed * Math.sin(this.balldirection);
+  private ballSpeedY: number = this.ballSpeed * Math.cos(this.balldirection);
   private moveball: NodeJS.Timer;
   private ballStatus: boolean = false;
   private leftPlayerPosition = { x: 400, y: 0 };
@@ -51,18 +53,11 @@ export class GameService {
     if (this.ballX >= 950 || this.ballX <= 0) {
       this.ballSpeedX *= -1;
     }
-    console.log(
-      this.ballX,
-      this.ballY,
-      this.leftPlayerPosition.x,
-      this.leftPlayerPosition.x + this.paddleLength,
-    );
     if (this.ballY < 0) {
       if (
         this.ballX > this.leftPlayerPosition.x &&
         this.ballX < this.leftPlayerPosition.x + this.paddleLength
       ) {
-        console.log(this.ballX, 'left paddle');
         this.ballSpeedY *= -1;
       } else {
         this.stopGameLoop();
@@ -76,7 +71,6 @@ export class GameService {
         this.ballX < this.rightPlayerPosition.x + this.paddleLength
       ) {
         this.ballSpeedY *= -1;
-        console.log('right paddle');
       } else {
         this.stopGameLoop();
         this.scores.left++;
@@ -119,7 +113,6 @@ export class GameService {
     if (this.leftPlayerPosition.x < 0) this.leftPlayerPosition.x = 0;
     if (this.leftPlayerPosition.x + this.paddleLength > 1000)
       this.leftPlayerPosition.x = 1000 - this.paddleLength;
-    console.log(this.leftPlayerPosition);
   }
 
   moveRightPlayerPosition(client: Socket, data: any) {
@@ -128,7 +121,6 @@ export class GameService {
     if (this.rightPlayerPosition.x < 0) this.rightPlayerPosition.x = 0;
     if (this.rightPlayerPosition.x + this.paddleLength > 1000)
       this.rightPlayerPosition.x = 1000 - this.paddleLength;
-    console.log(this.rightPlayerPosition);
   }
 
   getPlayerPosition(): IPlayerPosition[] {
