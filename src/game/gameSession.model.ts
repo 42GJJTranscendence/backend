@@ -55,12 +55,17 @@ export class GameSession {
 
   updateGame() {
     this.checkBallBounds();
-    this.updateBallPosition();
-
     if (this.ball.position.y < 0) {
       if (this.isBallCollidingWithPaddle(this.homePlayer)) {
-        this.ball.direction = -this.ball.direction;
-        console.log(this.ball.direction);
+        // this.ball.direction = -this.ball.direction;
+        this.ball.direction =
+          Math.PI / 2 -
+          ((Math.PI / 4) *
+            (this.ball.position.x -
+              this.homePlayer.position.x +
+              this.homePlayer.paddleLength / 2)) /
+            this.homePlayer.paddleLength /
+            2;
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
         this.ball.v.y = this.ball.speed * Math.sin(this.ball.direction);
       } else {
@@ -68,14 +73,28 @@ export class GameSession {
       }
     } else if (this.ball.position.y > 930) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
-        this.ball.direction = -this.ball.direction;
-        console.log(this.ball.direction);
+        // this.ball.direction = -this.ball.direction;
+        console.log(
+          'position x:',
+          this.ball.position.x,
+          'paddle point: ',
+          this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
+        );
+        this.ball.direction =
+          (Math.PI * 3) / 2 +
+          ((Math.PI / 4) *
+            (this.ball.position.x -
+              this.awayPlayer.position.x +
+              this.awayPlayer.paddleLength / 2)) /
+            this.awayPlayer.paddleLength /
+            2;
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
         this.ball.v.y = this.ball.speed * Math.sin(this.ball.direction);
       } else {
         this.handleScoreAndResult('away');
       }
     }
+    this.updateBallPosition();
   }
 
   checkBallBounds() {

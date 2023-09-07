@@ -12,7 +12,7 @@ export class Ball {
 
   constructor() {
     this.position = { x: 480, y: 480 };
-    this.direction = Math.PI / 3;
+    this.direction = Math.PI / 2;
     this.speed = 10;
     this.v = {
       x: this.speed * Math.cos(this.direction),
@@ -42,7 +42,7 @@ export class Ball {
   resetBall() {
     this.position.x = 480;
     this.position.y = 480;
-    this.direction = Math.PI / 3;
+    this.direction = Math.PI / 2;
     this.v = {
       x: this.speed * Math.cos(this.direction),
       y: this.speed * Math.sin(this.direction),
