@@ -9,10 +9,11 @@ export class UserController {
     ){}
 
     @Get('/check/duplication')
-    CheckDuplicationUserName(@Query('username') username : string) {
-        let user = this.userService.findOneByUsername(username);
-
-        if (user == null) {
+    async CheckDuplicationUserName(@Query('username') username : string) {
+        console.log(username);
+        let user = await this.userService.findOneByUsername(username);
+        console.log(user);
+        if (user != null) {
             return true;
         }
         else

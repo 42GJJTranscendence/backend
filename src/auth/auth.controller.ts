@@ -90,10 +90,10 @@ export class AuthController {
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
-
     @Get('/test')
     @UseGuards(AuthGuard())
-    async AuthTest(@GetUser() user : User) {
+    async AuthTest(@GetUser() user : User, @Res() res) {
         console.log('req', user);
+        res.send(200, user.username);
     }
 }

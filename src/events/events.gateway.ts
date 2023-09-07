@@ -6,8 +6,7 @@ import { Server, Socket } from 'socket.io';
   namespace: 'chat',
   cors: { origin: '*' },
 })
-export class EventsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   constructor() {}
   
