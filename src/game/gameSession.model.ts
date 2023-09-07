@@ -59,7 +59,8 @@ export class GameSession {
       if (this.isBallCollidingWithPaddle(this.homePlayer)) {
         this.ball.direction =
           Math.PI / 2 -
-          (this.ball.position.x -
+          (this.ball.position.x +
+            25 -
             (this.homePlayer.position.x + this.homePlayer.paddleLength / 2)) /
             (this.homePlayer.paddleLength / 2);
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
@@ -79,7 +80,8 @@ export class GameSession {
         );
         this.ball.direction =
           (Math.PI * 3) / 2 +
-          (this.ball.position.x -
+          (this.ball.position.x +
+            25 -
             (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2)) /
             (this.awayPlayer.paddleLength / 2);
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
@@ -106,8 +108,8 @@ export class GameSession {
 
   isBallCollidingWithPaddle(player: Player): boolean {
     return (
-      this.ball.position.x > player.position.x &&
-      this.ball.position.x < player.position.x + player.paddleLength
+      this.ball.position.x + 25 > player.position.x &&
+      this.ball.position.x + 25 < player.position.x + player.paddleLength
     );
   }
 
