@@ -4,38 +4,48 @@ interface IPosition {
 }
 
 export class Ball {
-    position: IPosition;
-    speed: IPosition;
-    status: boolean;
-  
-    constructor() {
-      this.position = { x: 480, y: 480 };
-      this.speed = { x: 5, y: 7 };
-      this.status = false;
-    }
+  position: IPosition;
+  v: IPosition;
+  speed: number;
+  status: boolean;
+  direction: number;
 
-    getBallPosition()
-    {
-		return this.position;
-    }
-
-    setBallPostion({x, y})
-    {
-		this.position.x = x;
-		this.position.y = y;
-    }
-
-	setBallSpeed({x, y})
-    {
-		this.speed.x = x;
-		this.speed.y = y;
-    }
-
-	resetBall()
-	{
-		this.position.x = 480;
-		this.position.y = 480;
-		this.speed.x = this.speed.x;
-		this.speed.y = this.speed.y * -1;
-	}
+  constructor() {
+    this.position = { x: 480, y: 480 };
+    this.direction = Math.PI / 3;
+    this.speed = 10;
+    this.v = {
+      x: this.speed * Math.cos(this.direction),
+      y: this.speed * Math.sin(this.direction),
+    };
+    this.status = false;
   }
+
+  getBallPosition() {
+    return this.position;
+  }
+
+  setBallPostion({ x, y }) {
+    this.position.x = x;
+    this.position.y = y;
+  }
+
+  setBallv({ x, y }) {
+    this.v.x = x;
+    this.v.y = y;
+  }
+
+  setBallSpeed({ speed }) {
+    this.speed = speed;
+  }
+
+  resetBall() {
+    this.position.x = 480;
+    this.position.y = 480;
+    this.direction = Math.PI / 3;
+    this.v = {
+      x: this.speed * Math.cos(this.direction),
+      y: this.speed * Math.sin(this.direction),
+    };
+  }
+}
