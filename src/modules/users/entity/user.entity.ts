@@ -11,11 +11,14 @@ export class User {
   @Column({ unique: true })
   username: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   password: string;
 
   @Column()
   eMail: string;
+
+  @Column({ nullable: true })
+  mailValidateCode: string;
 
   @Column()
   imageUrl: string;
