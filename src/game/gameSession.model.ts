@@ -81,7 +81,7 @@ export class GameSession {
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
         this.ball.v.y = this.ball.speed * Math.sin(this.ball.direction);
       } else {
-        this.handleScoreAndResult('home');
+        this.handleScoreAndResult('away');
       }
     } else if (this.ball.position.y > this.width - this.ballSize) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
@@ -102,7 +102,7 @@ export class GameSession {
         this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
         this.ball.v.y = this.ball.speed * Math.sin(this.ball.direction);
       } else {
-        this.handleScoreAndResult('away');
+        this.handleScoreAndResult('home');
       }
     }
     this.updateBallPosition();
