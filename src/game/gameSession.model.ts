@@ -10,14 +10,26 @@ export class GameSession {
   private ball: Ball = new Ball();
   private scores = { home: 0, away: 0 };
   private onGameEnd: (session: GameSession) => void;
+  private width: number = 1300;
+  private height: number = 960;
+  private paddleLength: number = 200;
+  private ballSize: number = 50;
 
   constructor(
     homeSocket: Socket,
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
   ) {
-    this.homePlayer = new Player({ x: 400, y: 0 }, 200, homeSocket);
-    this.awayPlayer = new Player({ x: 400, y: 980 }, 200, awaySocket);
+    this.homePlayer = new Player(
+      { x: this.height / 2 - this.paddleLength / 2, y: 0 },
+      this.paddleLength,
+      homeSocket,
+    );
+    this.awayPlayer = new Player(
+      { x: this.height / 2 - this.paddleLength / 2, y: this.width - 20 },
+      this.paddleLength,
+      awaySocket,
+    );
     this.roomName = `game-${homeSocket.id}-${awaySocket.id}`;
 
     homeSocket.join(this.roomName);
@@ -36,7 +48,10 @@ export class GameSession {
   async startGameLoop() {
     if (!this.ball.status) {
       setTimeout(() => {
-        this.ball.setBallPostion({ x: 480, y: 480 });
+        this.ball.setBallPostion({
+          x: this.height / 2 - this.ballSize / 2,
+          y: this.width / 2 - this.ballSize / 2,
+        });
         this.moveBall = setInterval(() => {
           this.updateGame();
           this.broadcastBallPosition(this.ball.getBallPosition());
@@ -68,7 +83,7 @@ export class GameSession {
       } else {
         this.handleScoreAndResult('home');
       }
-    } else if (this.ball.position.y > 950) {
+    } else if (this.ball.position.y > this.width - this.ballSize) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
         console.log(
           this.ball.position.x,
@@ -94,7 +109,10 @@ export class GameSession {
   }
 
   checkBallBounds() {
-    if (this.ball.position.x >= 950 || this.ball.position.x <= 0) {
+    if (
+      this.ball.position.x + this.ballSize >= this.height ||
+      this.ball.position.x <= 0
+    ) {
       this.ball.direction = Math.PI - this.ball.direction;
       this.ball.v.x = this.ball.speed * Math.cos(this.ball.direction);
       this.ball.v.y = this.ball.speed * Math.sin(this.ball.direction);
@@ -143,14 +161,20 @@ export class GameSession {
       if (data === 'up') this.homePlayer.position.x -= 30;
       else if (data === 'down') this.homePlayer.position.x += 30;
       if (this.homePlayer.position.x < 0) this.homePlayer.position.x = 0;
-      if (this.homePlayer.position.x > 1000 - this.homePlayer.paddleLength)
-        this.homePlayer.position.x = 1000 - this.homePlayer.paddleLength;
+      if (
+        this.homePlayer.position.x >
+        this.height - this.homePlayer.paddleLength
+      )
+        this.homePlayer.position.x = this.height - this.homePlayer.paddleLength;
     } else if (client == this.awayPlayer.socket) {
       if (data === 'up') this.awayPlayer.position.x -= 30;
       else if (data === 'down') this.awayPlayer.position.x += 30;
       if (this.awayPlayer.position.x < 0) this.awayPlayer.position.x = 0;
-      if (this.awayPlayer.position.x + this.awayPlayer.paddleLength > 1000)
-        this.awayPlayer.position.x = 1000 - this.awayPlayer.paddleLength;
+      if (
+        this.awayPlayer.position.x + this.awayPlayer.paddleLength >
+        this.height
+      )
+        this.awayPlayer.position.x = this.height - this.awayPlayer.paddleLength;
     }
   }
 
