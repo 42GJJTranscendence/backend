@@ -40,8 +40,6 @@ export class Ball {
   }
 
   resetBall() {
-    // this.position.x = centerPosition.x / 2;
-    // this.position.y = centerPosition.y / 2;
     this.direction = Math.PI / 2;
     this.v = {
       x: this.speed * Math.cos(this.direction),
