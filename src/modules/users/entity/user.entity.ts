@@ -16,10 +16,7 @@ export class User {
 
   @Column()
   eMail: string;
-
-  @Column({ nullable: true })
-  mailValidateCode: string;
-
+  
   @Column()
   imageUrl: string;
 }

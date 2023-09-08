@@ -8,6 +8,7 @@ import { UsersModule } from 'src/modules/users/users.module';
 import { UserService } from 'src/modules/users/service/user.service';
 import { JwtStrategy } from './scurity/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { RedisModule } from 'src/database/redis/redis.module';
 
 @Module({
     imports: [TypeOrmModule.forFeature([User]), UsersModule,
@@ -15,7 +16,8 @@ import { PassportModule } from '@nestjs/passport';
         secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '300s' },
       }),
-      PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    RedisModule,
     ],
     controllers: [AuthController],
     providers: [AuthService, UserService, JwtStrategy],

@@ -23,7 +23,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
           pass: 'cvrnaankuythvlxq',
         },
       },
-    }),],
+    })
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

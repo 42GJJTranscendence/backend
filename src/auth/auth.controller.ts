@@ -103,9 +103,14 @@ export class AuthController {
         res.send(200, user.username);
     }
 
-    @Get('/mail/send/code')
-    async mailTest(@Query('email') email : string) {
+    @Get('/verification/email')
+    async sendVerificationMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        return true;
+        res.send(200);
+    }
+
+    @Get('/verification/email/check')
+    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+        return await this.authService.checkVerificationCode(email, code);
     }
 }
