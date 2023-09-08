@@ -10,8 +10,8 @@ export class Ball {
   status: boolean;
   direction: number;
 
-  constructor() {
-    this.position = { x: 480, y: 480 };
+  constructor(private readonly ballX: number, private readonly ballY: number) {
+    this.position = { x: ballX, y: ballY };
     this.direction = Math.PI / 2;
     this.speed = 10;
     this.v = {
@@ -40,8 +40,8 @@ export class Ball {
   }
 
   resetBall() {
-    this.position.x = 480;
-    this.position.y = 480;
+    // this.position.x = centerPosition.x / 2;
+    // this.position.y = centerPosition.y / 2;
     this.direction = Math.PI / 2;
     this.v = {
       x: this.speed * Math.cos(this.direction),

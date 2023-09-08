@@ -7,13 +7,13 @@ export class GameSession {
   private homePlayer: Player;
   private awayPlayer: Player;
   private moveBall: NodeJS.Timer;
-  private ball: Ball = new Ball();
   private scores = { home: 0, away: 0 };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
   private height: number = 960;
   private paddleLength: number = 200;
   private ballSize: number = 50;
+  private ball: Ball = new Ball(this.height / 2, this.width / 2);
 
   constructor(
     homeSocket: Socket,
@@ -47,6 +47,10 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
+      this.ball.setBallPostion({
+        x: this.height / 2 - this.ballSize / 2,
+        y: this.width / 2 - this.ballSize / 2,
+      });
       setTimeout(() => {
         this.ball.setBallPostion({
           x: this.height / 2 - this.ballSize / 2,
