@@ -4,24 +4,24 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
-import { AppController } from './app.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ChatModule } from './chat/chat.module';
-import { GameModule } from './game/game.module';
-import { SocketModule } from './socket/socket.module';
+import { EventsModule } from './events/events.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
-  imports: [
-    // TypeOrmModule.forRoot(typeOrmConfig),
-    // UsersModule,
-    // AuthModule,
-    // JwtModule.register({
-    //   secret: process.env.JWT_SECRET,
-    //   signOptions: { expiresIn: '300s' },
-    // }),
-    ChatModule,
-    GameModule,
-    SocketModule,
+  imports: [TypeOrmModule.forRoot(typeOrmConfig)
+    , UsersModule, AuthModule
+    , EventsModule
+    , MailerModule.forRoot({
+      transport: {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'jhkim0097@gmail.com',
+          pass: 'cvrnaankuythvlxq',
+        },
+      },
+    })
   ],
   controllers: [AppController],
   providers: [AppService],

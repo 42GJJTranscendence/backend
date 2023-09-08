@@ -1,3 +1,8 @@
+export class FortyTwoTokenJsonInterface {
+    message: string;
+    access_token: string;
+}
+
 export class FortyTwoUserDto {
     id: number;
     login: string;

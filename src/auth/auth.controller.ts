@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
-import { profileEnd } from "console";
+import { AuthGuard } from "@nestjs/passport";
+import { User } from "src/modules/users/entity/user.entity";
+import { GetUser } from "./scurity/get-user.decorator";
 
 
 @Controller('auth')
@@ -39,14 +41,16 @@ export class AuthController {
         };
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
-        res.cookie('access_token', jwtAccessToken, cookieOptions);
+        res.send(jwtAccessToken);
+        // res.cookie('access_token', jwtAccessToken, cookieOptions);
 
         // 리다이렉트
-        res.redirect(`${process.env.FRONT_HOME_URL}`);
+        // res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
+        console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
         // 쿠키 설정
         const cookieOptions = {
             httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
@@ -58,11 +62,17 @@ export class AuthController {
         const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
+        res.send(jwtAccessToken);
 
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         // 리다이렉트
-        // return res.json(jwtAccessToken);
+        return res.json(jwtAccessToken);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
+    }
+
+    @Get('/check/duplication')
+    async checkDuplication(@Query('username') username : string){
+        return await this.authService.checkDuplication(username);
     }
 
     @Get('/cookie')
@@ -83,8 +93,24 @@ export class AuthController {
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
 
         res.cookie('access_token', jwtAccessToken, cookieOptions);
-        // 리다이렉트
-        // return res.json(jwtAccessToken);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
+    }
+
+    @Get('/test')
+    @UseGuards(AuthGuard())
+    async AuthTest(@GetUser() user : User, @Res() res) {
+        console.log('req', user);
+        res.send(200, user.username);
+    }
+
+    @Get('/verification/email')
+    async sendVerificationMail(@Query('email') email : string, @Res() res) {
+        this.authService.sendVerificationCode(email);
+        res.send(200);
+    }
+
+    @Get('/verification/email/check')
+    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+        return await this.authService.checkVerificationCode(email, code);
     }
 }
