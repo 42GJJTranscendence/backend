@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { EventsModule } from './events/events.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { AppController } from './app.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
