@@ -70,6 +70,11 @@ export class AuthController {
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 
+    @Get('/check/duplication')
+    async checkDuplication(@Query('username') username : string){
+        return await this.authService.checkDuplication(username);
+    }
+
     @Get('/cookie')
     async CookieTest(@Res() res) : Promise<any>{
         // 쿠키 설정
@@ -90,10 +95,22 @@ export class AuthController {
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
+
     @Get('/test')
     @UseGuards(AuthGuard())
     async AuthTest(@GetUser() user : User, @Res() res) {
         console.log('req', user);
         res.send(200, user.username);
+    }
+
+    @Get('/verification/email')
+    async sendVerificationMail(@Query('email') email : string, @Res() res) {
+        this.authService.sendVerificationCode(email);
+        res.send(200);
+    }
+
+    @Get('/verification/email/check')
+    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+        return await this.authService.checkVerificationCode(email, code);
     }
 }

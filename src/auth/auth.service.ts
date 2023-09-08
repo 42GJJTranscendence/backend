@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { User } from "src/modules/users/entity/user.entity";
 import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
 import { UserDto } from "src/modules/users/dto/user.dto";
@@ -6,14 +6,40 @@ import { UserService } from "src/modules/users/service/user.service";
 import * as bcrypt from 'bcrypt';
 import { Payload } from "./scurity/payload.interface";
 import { JwtService } from "@nestjs/jwt";
+import { UserDuplicatException } from "src/common/exception/custom.exception";
+import { MailerService } from "@nestjs-modules/mailer";
+import { RedisClientType } from "redis";
 
 @Injectable()
 export class AuthService {
 
     constructor(
+        @Inject('REDIS_CLIENT')
+        private readonly redis: RedisClientType,
         private userService : UserService,
         private jwtService : JwtService,
+        private readonly mailerService: MailerService,
     ) {}
+
+    async sendVerificationCode(email: string): Promise<void>{
+        const code = Math.floor(Math.random() * 10000).toString();
+        await this.mailerService.sendMail({
+            to: email,
+            subject: 'FortyTwo Transcendence 인증 코드',
+            text: `Your verification code is ${code}`,
+        });
+        await this.redis.set(email, code, { EX : 300 });
+    }
+
+    async checkVerificationCode(email: string, code: string): Promise<Boolean> {
+        const codeFind = await this.redis.get(email);
+        if (codeFind == null || codeFind != code)
+            return false;
+        else {
+            await this.redis.del(email);
+            return true;
+        }
+    }
 
     async getToken(code: string, res: Response): Promise<string> {
         console.log("now retrieving token...");
@@ -77,15 +103,17 @@ export class AuthService {
             });
     }
 
-    async authenticate(code: string, res: Response): Promise<String>{//Promise<User | undefined> {
+    async authenticate(code: string, res: Response): Promise<String> {
         const token = await this.getToken(code, res);
         if (token == '')
             return undefined;
         return token;
     }
 
-    async signInUser(signInRequestDto : SignInRequestDto): Promise<String | undefined> {//Promise<User | undefined> {
-        console.log("fortyTwoToken", signInRequestDto.fortyTwoToken);
+    async signInUser(signInRequestDto : SignInRequestDto): Promise<String | undefined> {
+        if (await this.checkDuplication(signInRequestDto.username) == true) {
+            throw new UserDuplicatException();
+        }
         const fortyTwoUserDto = await this.getUser(signInRequestDto.fortyTwoToken);
         const user = new User();
         user.username=signInRequestDto.username;
@@ -114,5 +142,15 @@ export class AuthService {
         const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
         
         return Promise.resolve(await this.jwtService.sign(payload));
+    }
+
+    async checkDuplication(username : string): Promise<Boolean> {
+        let userFind: User = await this.userService.findOneByUsername(username);
+        if (userFind == null)
+            return false;
+        else
+        {
+            return true;
+        }
     }
 }
