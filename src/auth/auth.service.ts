@@ -28,6 +28,7 @@ export class AuthService {
             subject: 'FortyTwo Transcendence 인증 코드',
             text: `Your verification code is ${code}`,
         });
+        console.log("email :", email,"\ncode :", code);
         await this.redis.set(email, code, { EX : 300 });
     }
 

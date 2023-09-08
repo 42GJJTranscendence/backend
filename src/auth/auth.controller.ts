@@ -111,6 +111,7 @@ export class AuthController {
 
     @Get('/verification/email/check')
     async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+        console.log("email :", email,"\ncode :", code);
         return await this.authService.checkVerificationCode(email, code);
     }
 }
