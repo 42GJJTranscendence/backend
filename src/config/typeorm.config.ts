@@ -19,7 +19,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   port: 5432,
   username: 'jaehyuki',
   password: '1234',
-  database: 'main',
+  database: 'MAIN',
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   synchronize: true,
 };
