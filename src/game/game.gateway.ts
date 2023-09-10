@@ -12,9 +12,9 @@ import { GameService } from './game.service';
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly gameService: GameService) {}
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket): Promise<any> {
 		console.log("handleConnection")
-    this.gameService.addClient(client);
+    await this.gameService.addClient(client);
   }
   
   handleDisconnect(client: Socket) {

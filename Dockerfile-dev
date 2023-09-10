@@ -16,7 +16,7 @@ RUN npm install
 
 
 
-EXPOSE 5000/tcp
+EXPOSE 8080/tcp
 EXPOSE 7000/tcp
 
 CMD ["tail", "-f" ,"/dev/null"]
