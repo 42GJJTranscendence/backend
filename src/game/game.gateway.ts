@@ -9,7 +9,7 @@ import { Socket } from 'socket.io';
 import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
 
-@WebSocketGateway(7000, { namespace: 'game' })
+@WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly gameService: GameService,
@@ -19,7 +19,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		console.log("handleConnection")
     const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
 
-    const user = this.authService.vaildateUserToken(token);
+    const user = this.authService.getUser(token);
 
     if (user) {
       client.data.user = user;
