@@ -1,8 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { User } from "src/users/entity/user.entity";
-import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
-import { UserDto } from "src/users/dto/user.dto";
-import { UserService } from "src/users/service/user.service";
+import { User } from "src/modules/users/entity/user.entity";
+import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface, LogInResponseDto } from "./dto/auth.dto";
+import { UserDto } from "src/modules/users/dto/user.dto";
+import { UserService } from "src/modules/users/service/user.service";
 import * as bcrypt from 'bcrypt';
 import { Payload } from "./scurity/payload.interface";
 import { JwtService } from "@nestjs/jwt";
@@ -133,7 +133,7 @@ export class AuthService {
         return Promise.resolve(this.jwtService.sign(payload));
     }
 
-    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
+    async validateUser(logInRequestDto: LogInRequestDto): Promise<LogInResponseDto | undefined> {
         let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
         const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
@@ -142,7 +142,7 @@ export class AuthService {
     
         const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
         
-        return Promise.resolve(await this.jwtService.sign(payload));
+        return Promise.resolve({ jwtAccessToken : await this.jwtService.sign(payload), userEmail : userFind.eMail});
     }
 
     vaildateUserToken(token: string) {

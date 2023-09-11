@@ -22,3 +22,8 @@ export class LogInRequestDto {
     username : string;
     password: string;
 }
+
+export class LogInResponseDto {
+    jwtAccessToken : string;
+    userEmail : string;
+}

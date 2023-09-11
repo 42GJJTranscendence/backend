@@ -32,14 +32,6 @@ export class AuthController {
         console.log("username : ", signInRequestDto.username, "\npassword : ", signInRequestDto.password, "\neMail : ", signInRequestDto.email,"\nfortyTwoToken : ", signInRequestDto.fortyTwoToken);
         const jwtAccessToken = await this.authService.signInUser(signInRequestDto);
 
-        // 쿠키 설정
-        const cookieOptions = {
-            httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
-            maxAge: 3600, // 쿠키 유효 기간 (초)
-            // secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
-            // 다른 쿠키 옵션들도 설정 가능
-        };
-
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
         res.send(jwtAccessToken);
     }
@@ -47,23 +39,10 @@ export class AuthController {
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
         console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
-        // 쿠키 설정
-        const cookieOptions = {
-            httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
-            maxAge: 3600, // 쿠키 유효 기간 (초)
-            // secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
-            // 다른 쿠키 옵션들도 설정 가능
-        };
 
-        const jwtAccessToken = await this.authService.validateUserPassword(logInRequestDto);
+        const logInResponseDto = await this.authService.validateUser(logInRequestDto);
 
-        console.log('ACCESS_TOKEN : ', jwtAccessToken);
-        res.send(jwtAccessToken);
-
-        res.cookie('access_token', jwtAccessToken, cookieOptions);
-        // 리다이렉트
-        return res.json(jwtAccessToken);
-        res.redirect(`${process.env.FRONT_HOME_URL}`);
+        return res.json({ logInResponseDto });
     }
 
     @Get('/check/duplication')
