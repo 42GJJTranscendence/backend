@@ -1,26 +1,25 @@
 import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { typeOrmConfig } from './config/typeorm.config';
-import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { JwtModule } from '@nestjs/jwt';
-import { EventsModule } from './events/events.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GameModule } from './game/game.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
-    , UsersModule, AuthModule
-    , EventsModule
+    , UsersModule, AuthModule, GameModule, ChatModule
     , MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
         auth: {
-          user: 'jhkim0097@gmail.com',
-          pass: 'cvrnaankuythvlxq',
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PW,
         },
       },
     })

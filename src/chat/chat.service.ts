@@ -20,6 +20,7 @@ export class ChatService {
   addMessage(username: string, message: string) {
     this.history = [...this.history, { username, message }];
   }
+
   getHistory() {
     return this.history;
   }
@@ -40,6 +41,10 @@ export class ChatService {
       const room = this.rooms.get(roomName);
       room.delete(client);
     }
+  }
+
+  getAllClients() : Set<Socket> {
+    return this.clients;
   }
 
   getRoomClients(roomName: string): Set<Socket> {

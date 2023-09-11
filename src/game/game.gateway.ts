@@ -8,7 +8,7 @@ import {
 import { Socket } from 'socket.io';
 import { GameService } from './game.service';
 
-@WebSocketGateway(7000, { namespace: 'game' })
+@WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly gameService: GameService) {}
 

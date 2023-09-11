@@ -8,21 +8,43 @@ import {
 import { ChatService } from './chat.service';
 import { Server } from 'http';
 import { Socket } from 'socket.io';
+import { AuthService } from 'src/auth/auth.service';
 
-@WebSocketGateway(8080, { namespace: 'chat' })
+@WebSocketGateway({
+  namespace: 'chat',
+  cors: { origin: '*'}
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly authService: AuthService) {}
 
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
-    this.chatService.addClient(client);
-    this.server.emit('connection', 'connected');
+    let token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+    console.log(token);
+    try {
+      const user = this.authService.vaildateUserToken(token);
+      client.data.user = user;
+      this.chatService.addClient(client);
+
+      this.server.emit('userLogin', { id: user.id, username: user.username });
+    } catch (error) {
+      console.log(error.response);
+      client.disconnect();
+    }
+    const clients = Array.from(this.chatService.getAllClients());
+    const allUserInfo = clients.map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
+    this.server.emit('connection', allUserInfo);
   }
 
   handleDisconnect(client: Socket) {
     this.chatService.removeClient(client);
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    console.log("Disconnected ", userInfo);
+    this.server.emit('userLogout', userInfo);
     this.server.emit('connection', 'disconnected');
   }
 

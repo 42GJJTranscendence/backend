@@ -137,12 +137,21 @@ export class AuthService {
         let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
         const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('Invalid password');
         }
     
         const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
         
         return Promise.resolve({ jwtAccessToken : await this.jwtService.sign(payload), userEmail : userFind.eMail});
+    }
+
+    vaildateUserToken(token: string) {
+        try {
+            const decoded = this.jwtService.verify(token);
+            return decoded; // JWT 토큰이 유효한 경우 사용자 정보를 반환
+        } catch (error) {
+            throw new UnauthorizedException('Invalid token'); // 토큰이 유효하지 않은 경우 예외 발생
+        }
     }
 
     async checkDuplication(username : string): Promise<Boolean> {
