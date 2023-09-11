@@ -19,8 +19,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         port: 465,
         secure: true,
         auth: {
-          user: 'jhkim0097@gmail.com',
-          pass: 'cvrnaankuythvlxq',
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PW,
         },
       },
     })
