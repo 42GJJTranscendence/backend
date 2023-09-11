@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
 import { AuthGuard } from "@nestjs/passport";
-import { User } from "src/modules/users/entity/user.entity";
+import { User } from "src/users/entity/user.entity";
 import { GetUser } from "./scurity/get-user.decorator";
 
 
@@ -42,10 +42,6 @@ export class AuthController {
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
         res.send(jwtAccessToken);
-        // res.cookie('access_token', jwtAccessToken, cookieOptions);
-
-        // 리다이렉트
-        // res.redirect(`${process.env.FRONT_HOME_URL}`);
     }
 
     @Post('/login')
@@ -59,7 +55,7 @@ export class AuthController {
             // 다른 쿠키 옵션들도 설정 가능
         };
 
-        const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
+        const jwtAccessToken = await this.authService.validateUserPassword(logInRequestDto);
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
         res.send(jwtAccessToken);
@@ -75,6 +71,18 @@ export class AuthController {
         return await this.authService.checkDuplication(username);
     }
 
+    @Get('/verification/email')
+    async sendVerificationMail(@Query('email') email : string, @Res() res) {
+        this.authService.sendVerificationCode(email);
+        res.send(200);
+    }
+
+    @Get('/verification/email/check')
+    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+        console.log("email :", email,"\ncode :", code);
+        return await this.authService.checkVerificationCode(email, code);
+    }
+
     @Get('/cookie')
     async CookieTest(@Res() res) : Promise<any>{
         // 쿠키 설정
@@ -88,7 +96,7 @@ export class AuthController {
         const logInRequestDto = new LogInRequestDto();
         logInRequestDto.username = 'jaehyuki';
         logInRequestDto.password = '1234';
-        const jwtAccessToken = await this.authService.validateUser(logInRequestDto);
+        const jwtAccessToken = await this.authService.validateUserPassword(logInRequestDto);
 
         console.log('ACCESS_TOKEN : ', jwtAccessToken);
 
@@ -101,17 +109,5 @@ export class AuthController {
     async AuthTest(@GetUser() user : User, @Res() res) {
         console.log('req', user);
         res.send(200, user.username);
-    }
-
-    @Get('/verification/email')
-    async sendVerificationMail(@Query('email') email : string, @Res() res) {
-        this.authService.sendVerificationCode(email);
-        res.send(200);
-    }
-
-    @Get('/verification/email/check')
-    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
-        console.log("email :", email,"\ncode :", code);
-        return await this.authService.checkVerificationCode(email, code);
     }
 }

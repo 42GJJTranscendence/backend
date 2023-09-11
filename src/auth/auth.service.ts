@@ -1,8 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { User } from "src/modules/users/entity/user.entity";
+import { User } from "src/users/entity/user.entity";
 import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
-import { UserDto } from "src/modules/users/dto/user.dto";
-import { UserService } from "src/modules/users/service/user.service";
+import { UserDto } from "src/users/dto/user.dto";
+import { UserService } from "src/users/service/user.service";
 import * as bcrypt from 'bcrypt';
 import { Payload } from "./scurity/payload.interface";
 import { JwtService } from "@nestjs/jwt";
@@ -133,16 +133,25 @@ export class AuthService {
         return Promise.resolve(this.jwtService.sign(payload));
     }
 
-    async validateUser(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
+    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
         let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
         const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('Invalid password');
         }
     
         const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
         
         return Promise.resolve(await this.jwtService.sign(payload));
+    }
+
+    vaildateUserToken(token: string) {
+        try {
+            const decoded = this.jwtService.verify(token);
+            return decoded; // JWT 토큰이 유효한 경우 사용자 정보를 반환
+        } catch (error) {
+            throw new UnauthorizedException('Invalid token'); // 토큰이 유효하지 않은 경우 예외 발생
+        }
     }
 
     async checkDuplication(username : string): Promise<Boolean> {

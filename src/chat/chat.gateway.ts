@@ -8,16 +8,36 @@ import {
 import { ChatService } from './chat.service';
 import { Server } from 'http';
 import { Socket } from 'socket.io';
+import { AuthService } from 'src/auth/auth.service';
 
-@WebSocketGateway(8080, { namespace: 'chat' })
+@WebSocketGateway({
+  namespace: 'chat',
+  cors: { origin: '*'}
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly authService: AuthService) {}
 
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
-    this.chatService.addClient(client);
+    const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+
+    const user = this.authService.vaildateUserToken(token);
+
+    if (user) {
+      client.data.user = user;
+      this.chatService.addClient(client);
+
+      this.server.emit('userJoined', { username: user.username });
+    } else {
+      // 토큰이 유효하지 않은 경우 연결 거부
+      client.disconnect();
+    }
+    const clients = this.chatService.getAllClients();
+    // const JoinedInfo = clients.map((c) => ({ id: c.data.user.id, username: 'user' /* 클라이언트 정보를 추가 */ }));
     this.server.emit('connection', 'connected');
   }
 
