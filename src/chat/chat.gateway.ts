@@ -14,7 +14,8 @@ import { AuthService } from 'src/auth/auth.service';
   namespace: 'chat',
   cors: { origin: process.env.FRONT_DOMAIN
     , credentials: true
-    , methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'}
+    , methods: ['GET','HEAD','PUT','PATCH','POST','DELETE']
+  }
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
