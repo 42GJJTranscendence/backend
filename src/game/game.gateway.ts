@@ -28,7 +28,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 토큰이 유효하지 않은 경우 연결 거부
       client.disconnect();
     }
-    this.gameService.addClient(client);
   }
   
   handleDisconnect(client: Socket) {

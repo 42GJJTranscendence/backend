@@ -70,6 +70,13 @@ export class GameSession {
     }
   }
 
+  // disconnect 될 때, 먼저 disconnect 된 user가 lose
+  disconnectGameLoop(client: Socket) {
+    this.stopGameLoop()
+    const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
+    this.matchService.createMatch(match); // DB 저장
+  }
+
   stopGameLoop() {
     if (this.ball.status) {
       clearInterval(this.moveBall);
@@ -152,7 +159,7 @@ export class GameSession {
         'game-result',
         result === 'win' ? 'lose' : 'win',
       );
-      const match = this.makeMatch(playerType);
+      const match = this.makeMatch(playerType); // DB 저장 
       this.matchService.createMatch(match);
       this.onGameEnd(this);
       this.leaveRoom();
