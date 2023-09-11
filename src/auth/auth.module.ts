@@ -9,6 +9,8 @@ import { UserService } from 'src/users/service/user.service';
 import { JwtStrategy } from './scurity/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { RedisModule } from 'src/database/redis/redis.module';
+import { RedisClientType } from "redis";
+
 
 @Module({
     imports: [TypeOrmModule.forFeature([User]), UsersModule,
@@ -21,7 +23,7 @@ import { RedisModule } from 'src/database/redis/redis.module';
     ],
     controllers: [AuthController],
     providers: [AuthService, UserService, JwtStrategy],
-    exports: [JwtStrategy, PassportModule]
+    exports: [JwtStrategy, PassportModule, AuthService]
 })
 
 export class AuthModule {

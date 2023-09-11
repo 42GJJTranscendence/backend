@@ -6,10 +6,12 @@ import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GameModule } from './game/game.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
-    , UsersModule, AuthModule
+    , UsersModule, AuthModule, GameModule, ChatModule
     , MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',

@@ -23,26 +23,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   handleConnection(client: Socket) {
-    const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
-
-    const user = this.authService.vaildateUserToken(token);
-
-    if (user) {
+    let token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+    console.log(token);
+    try {
+      const user = this.authService.vaildateUserToken(token);
       client.data.user = user;
       this.chatService.addClient(client);
 
-      this.server.emit('userJoined', { username: user.username });
-    } else {
-      // 토큰이 유효하지 않은 경우 연결 거부
+      this.server.emit('userLogin', { id: user.id, username: user.username });
+    } catch (error) {
+      console.log(error.response);
       client.disconnect();
     }
-    const clients = this.chatService.getAllClients();
-    // const JoinedInfo = clients.map((c) => ({ id: c.data.user.id, username: 'user' /* 클라이언트 정보를 추가 */ }));
-    this.server.emit('connection', 'connected');
+    const clients = Array.from(this.chatService.getAllClients());
+    const allUserInfo = clients.map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
+    this.server.emit('connection', allUserInfo);
   }
 
   handleDisconnect(client: Socket) {
     this.chatService.removeClient(client);
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    console.log("Disconnected ", userInfo);
+    this.server.emit('userLogout', userInfo);
     this.server.emit('connection', 'disconnected');
   }
 
