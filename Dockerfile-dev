@@ -14,9 +14,7 @@ COPY package*.json ./
 
 RUN npm install
 
-
-
 EXPOSE 8080/tcp
 EXPOSE 7000/tcp
 
-CMD ["tail", "-f" ,"/dev/null"]
+CMD ["npm", "run", "start:dev"]

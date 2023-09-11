@@ -8,12 +8,16 @@ import { EventsModule } from './events/events.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { GameModule } from './game/game.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig)
-    , UsersModule, AuthModule
-    , EventsModule
-    , MailerModule.forRoot({
+  imports: [
+    TypeOrmModule.forRoot(typeOrmConfig),
+    UsersModule,
+    AuthModule,
+    GameModule,
+    EventsModule,
+    MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',
         port: 465,
@@ -23,7 +27,7 @@ import { AppController } from './app.controller';
           pass: 'cvrnaankuythvlxq',
         },
       },
-    })
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
