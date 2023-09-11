@@ -2,11 +2,16 @@ import { Queue } from 'src/utils/queue';
 import { GameSession } from './gameSession.model';
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { MatchService } from './match/match.service';
 
 @Injectable()
 export class GameService {
 	private matchingQueue: Queue<Socket> = new Queue();
     private gameSessions: GameSession[] = [];
+
+	constructor(
+		private readonly matchService: MatchService
+	  ) {}
 	
 	// disconnect 될 때
 	private endSessionForClient(client: Socket) {
@@ -28,7 +33,7 @@ export class GameService {
 			const homePlayerSocket = this.matchingQueue.dequeue();
 			const awayPlayerSocket = this.matchingQueue.dequeue();
 
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession);
+			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService);
 			this.gameSessions.push(gameSession);
 		}
 	}

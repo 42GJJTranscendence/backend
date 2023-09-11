@@ -7,14 +7,27 @@ import {
 
 import { Socket } from 'socket.io';
 import { GameService } from './game.service';
+import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly gameService: GameService) {}
+  constructor(
+    private readonly gameService: GameService,
+    private readonly authService: AuthService) {}
 
   handleConnection(client: Socket) {
 		console.log("handleConnection")
-    this.gameService.addClient(client);
+    const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+
+    const user = this.authService.vaildateUserToken(token);
+
+    if (user) {
+      client.data.user = user;
+      this.gameService.addClient(client);
+    } else {
+      // 토큰이 유효하지 않은 경우 연결 거부
+      client.disconnect();
+    }
   }
   
   handleDisconnect(client: Socket) {
