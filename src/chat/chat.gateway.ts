@@ -12,7 +12,7 @@ import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({
   namespace: 'chat',
-  cors: { origin: '*', credentials: true}
+  cors: { origin: process.env.FRONT_DOMAIN, credentials: true}
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
