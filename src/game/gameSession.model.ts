@@ -1,6 +1,8 @@
 import { Socket } from 'socket.io';
 import { Ball } from './ball.model';
 import { Player } from './player.model';
+import { Match } from './match/match.entity';
+import { MatchService } from './match/match.service';
 
 export class GameSession {
   private roomName: string;
@@ -14,11 +16,13 @@ export class GameSession {
   private paddleLength: number = 200;
   private ballSize: number = 50;
   private ball: Ball = new Ball(this.height / 2, this.width / 2);
+  private matchService: MatchService;
 
   constructor(
     homeSocket: Socket,
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
+    matchService: MatchService
   ) {
     this.homePlayer = new Player(
       { x: this.height / 2 - this.paddleLength / 2, y: 0 },
@@ -37,6 +41,7 @@ export class GameSession {
 
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
+    this.matchService = matchService;
   }
 
   includesClient(client: Socket): boolean {
@@ -147,12 +152,24 @@ export class GameSession {
         'game-result',
         result === 'win' ? 'lose' : 'win',
       );
-      // 나중에 여기서 Match DB에 저장해야함
+      const match = this.makeMatch(playerType);
+      this.matchService.createMatch(match);
       this.onGameEnd(this);
       this.leaveRoom();
       return;
     }
     this.startGameLoop();
+  }
+
+  makeMatch(playerType: string): Match {
+    const match = new Match();
+    match.start_at = new Date();
+    match.user_home = this.homePlayer.socket.data.user;
+    match.user_away = this.awayPlayer.socket.data.user;
+    match.winner = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
+    match.user_home_score = this.scores.home;
+    match.user_away_score = this.scores.away;
+    return match;
   }
 
   leaveRoom() {
@@ -183,23 +200,23 @@ export class GameSession {
   }
 
   broadcastBallPosition(ballPosition: { x: number; y: number }) {
-    this.homePlayer.socket.emit('ballPosition', ballPosition);
-    this.awayPlayer.socket.emit('ballPosition', ballPosition);
+    this.homePlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
+    this.awayPlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
   }
 
   broadcastPlayerPosition() {
-    this.homePlayer.socket.emit('playerPosition', [
+    this.homePlayer.socket.to(this.roomName).emit('playerPosition', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
-    this.awayPlayer.socket.emit('playerPosition', [
+    this.awayPlayer.socket.to(this.roomName).emit('playerPosition', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
   }
 
   broadcastScores() {
-    this.homePlayer.socket.emit('scores', this.scores);
-    this.awayPlayer.socket.emit('scores', this.scores);
+    this.homePlayer.socket.to(this.roomName).emit('scores', this.scores);
+    this.awayPlayer.socket.to(this.roomName).emit('scores', this.scores);
   }
 }
