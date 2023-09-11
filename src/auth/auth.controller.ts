@@ -40,7 +40,7 @@ export class AuthController {
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
         console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
 
-        const logInResponseDto = await this.authService.validateUser(logInRequestDto);
+        const logInResponseDto = await this.authService.validateUserPassword(logInRequestDto);
 
         return res.json({ logInResponseDto });
     }
