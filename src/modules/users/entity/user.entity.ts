@@ -5,7 +5,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true})
+  @Column({ unique: false})
   fortyTwoId: number;
 
   @Column({ unique: true })
