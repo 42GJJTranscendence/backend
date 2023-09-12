@@ -1,6 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { User } from "src/users/entity/user.entity";
-import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface, LogInResponseDto } from "./dto/auth.dto";
+import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
 import { UserDto } from "src/users/dto/user.dto";
 import { UserService } from "src/users/service/user.service";
 import * as bcrypt from 'bcrypt';
@@ -22,7 +22,7 @@ export class AuthService {
     ) {}
 
     async sendVerificationCode(email: string): Promise<void>{
-        const code = Math.floor(Math.random() * 10000).toString();
+        const code = Math.floor(Math.random() * 1000000).toString();
         await this.mailerService.sendMail({
             to: email,
             subject: 'FortyTwo Transcendence 인증 코드',
@@ -32,13 +32,15 @@ export class AuthService {
         await this.redis.set(email, code, { EX : 300 });
     }
 
-    async checkVerificationCode(email: string, code: string): Promise<Boolean> {
+    async checkVerificationCode(email: string, code: string): Promise<string | undefined> {
         const codeFind = await this.redis.get(email);
         if (codeFind == null || codeFind != code)
-            return false;
+            throw new UnauthorizedException('Email authorize faile.');
         else {
             await this.redis.del(email);
-            return true;
+            const userFind : User = await this.userService.findOneByUserEmail(email);
+            const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
+            return Promise.resolve(this.jwtService.sign(payload));
         }
     }
 
@@ -111,7 +113,7 @@ export class AuthService {
         return token;
     }
 
-    async signInUser(signInRequestDto : SignInRequestDto): Promise<String | undefined> {
+    async signInUser(signInRequestDto : SignInRequestDto) {
         if (await this.checkDuplication(signInRequestDto.username) == true) {
             throw new UserDuplicatException();
         }
@@ -127,22 +129,16 @@ export class AuthService {
         user.password = hashedPassword;
 
         const createdUser = await this.userService.createUser(user);
-
-        const payload: Payload = { id: createdUser.id, username: createdUser.username, fortyTwoId: createdUser.fortyTwoId};
-        
-        return Promise.resolve(this.jwtService.sign(payload));
     }
 
-    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise<LogInResponseDto | undefined> {
+    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
         let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
         const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
             throw new UnauthorizedException('Invalid password');
         }
-    
-        const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
-        
-        return Promise.resolve({ jwtAccessToken : await this.jwtService.sign(payload), userEmail : userFind.eMail});
+
+        return Promise.resolve( userFind.eMail );
     }
 
     vaildateUserToken(token: string) {
