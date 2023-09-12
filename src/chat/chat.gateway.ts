@@ -12,9 +12,9 @@ import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({
   namespace: 'chat',
-  cors: true, 
+  // cors:
   // {
-  //   origin: "*",
+  //   origin: "http://localhost:3000",
   //   credentials: true,
   // }
 })
