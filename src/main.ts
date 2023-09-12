@@ -15,12 +15,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   //Cors
-  // app.enableCors({
-  //   origin: "*",
-  //   credentials: true,
-  //   methods: ["GET", "POST"],
-  // });
-
+  app.enableCors({
+    origin: "*",
+    credentials: true,
+  });
 
   //Swagger
   const config = new DocumentBuilder()
