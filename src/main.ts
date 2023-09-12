@@ -20,6 +20,10 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // WebSocket 어댑터 설정
+  const io = app.get(IoAdapter);
+   app.useWebSocketAdapter(io);
+
   //Swagger
   const config = new DocumentBuilder()
       .setTitle('TS API DOCS')
