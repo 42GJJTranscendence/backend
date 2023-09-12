@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { typeOrmConfig } from './config/typeorm.config';
-import { UsersModule } from './users/users.module';
+import { UsersModule } from './module/users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { AppController } from './app.controller';
