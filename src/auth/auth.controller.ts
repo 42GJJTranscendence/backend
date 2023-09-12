@@ -52,13 +52,13 @@ export class AuthController {
     @Post('/signin/verification/email')
     async sendVerificationSignInMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        res.status(200);
+        res.status(201).send('User verification code sended.');
     }
 
     @Post('/login/verification/email')
     async sendVerificationLogInMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        res.status(200);
+        res.status(201).send('User verification code sended.');
     }
 
     @Get('/signin/verification/email/check')
