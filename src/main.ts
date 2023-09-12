@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
-import { SocketAdapter } from './utils/socket.apdeptor';
+import { SocketAdapter } from './config/socket.adapter';
 
 const port = process.env.PORT || 5000;
 
