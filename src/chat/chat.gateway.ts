@@ -12,9 +12,9 @@ import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({
   namespace: 'chat',
-  cors: { origin: "http://localhost:3000"
+  cors: { origin: "*"
     , credentials: true
-    , methods: ['GET','HEAD','PUT','PATCH','POST','DELETE']
+    , methods: ["GET","POST"]
   }
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {

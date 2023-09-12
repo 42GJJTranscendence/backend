@@ -18,8 +18,10 @@ async function bootstrap() {
   app.enableCors({
     origin: "*",
     credentials: true,
+    methods: ["GET", "POST"],
   });
 
+  
   //Swagger
   const config = new DocumentBuilder()
       .setTitle('TS API DOCS')
