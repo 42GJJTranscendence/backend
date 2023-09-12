@@ -2,8 +2,6 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
-import * as socketio from 'socket.io';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
 
@@ -19,10 +17,6 @@ async function bootstrap() {
     origin: "*",
     credentials: true,
   });
-
-  // WebSocket 어댑터 설정
-  const io = app.get(IoAdapter);
-   app.useWebSocketAdapter(io);
 
   //Swagger
   const config = new DocumentBuilder()
