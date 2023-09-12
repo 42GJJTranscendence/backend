@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
+import { SocketAdapter } from './utils/socket.apdeptor';
 
 const port = process.env.PORT || 5000;
 
@@ -18,6 +19,8 @@ async function bootstrap() {
     credentials: true,
   });
   
+  app.useWebSocketAdapter(new SocketAdapter(app));
+
   //Swagger
   const config = new DocumentBuilder()
       .setTitle('TS API DOCS')
