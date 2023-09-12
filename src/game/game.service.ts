@@ -1,6 +1,6 @@
 import { Queue } from 'src/utils/queue';
 import { GameSession } from './gameSession.model';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { MatchService } from './match/match.service';
 
@@ -17,7 +17,7 @@ export class GameService {
 	private endSessionForClient(client: Socket) {
 		const session = this.gameSessions.find(session => session.includesClient(client));
 		if (session) {
-			session.stopGameLoop()
+			session.disconnectGameLoop(client)
 			this.gameSessions = this.gameSessions.filter(s => s !== session);
 		}
 	}
@@ -40,8 +40,8 @@ export class GameService {
   
 	addClient(client: Socket)
 	{
-		console.log("client socket id : " + client.id)
-		console.log("queue size : " + this.matchingQueue.size())
+		Logger.log("[Game] addClient -> client socket id : " + client.id)
+		Logger.log("queue size : " + this.matchingQueue.size())
 		if (this.matchingQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });

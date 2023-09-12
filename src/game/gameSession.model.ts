@@ -17,6 +17,7 @@ export class GameSession {
   private ballSize: number = 50;
   private ball: Ball = new Ball(this.height / 2, this.width / 2);
   private matchService: MatchService;
+  private isGameOn: boolean;
 
   constructor(
     homeSocket: Socket,
@@ -52,6 +53,7 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
+      this.isGameOn = true;
       this.ball.setBallPostion({
         x: this.height / 2 - this.ballSize / 2,
         y: this.width / 2 - this.ballSize / 2,
@@ -73,8 +75,11 @@ export class GameSession {
   // disconnect 될 때, 먼저 disconnect 된 user가 lose
   disconnectGameLoop(client: Socket) {
     this.stopGameLoop()
-    const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
-    this.matchService.createMatch(match); // DB 저장
+    if (this.isGameOn === true)
+    {
+      const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
+      this.matchService.createMatch(match); // DB 저장
+    }
   }
 
   stopGameLoop() {
@@ -159,6 +164,7 @@ export class GameSession {
         'game-result',
         result === 'win' ? 'lose' : 'win',
       );
+      this.isGameOn = false;
       const match = this.makeMatch(playerType); // DB 저장 
       this.matchService.createMatch(match);
       this.onGameEnd(this);
