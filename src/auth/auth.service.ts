@@ -38,7 +38,9 @@ export class AuthService {
             throw new UnauthorizedException('Email authorize faile.');
         else {
             await this.redis.del(email);
-            const userFind : User = await this.userService.findOneByUserEmail(email);
+            const userFind : User = await this.userService.findOneByUserEmail('abc');
+            if (userFind == null)
+                return undefined;
             const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
             return Promise.resolve(this.jwtService.sign(payload));
         }
