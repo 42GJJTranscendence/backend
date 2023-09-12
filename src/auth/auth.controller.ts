@@ -52,20 +52,20 @@ export class AuthController {
     @Post('/signin/verification/email')
     async sendVerificationSignInMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        res.send(200);
+        res.status(200);
     }
 
     @Post('/login/verification/email')
     async sendVerificationLogInMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        res.send(200);
+        res.status(200);
     }
 
     @Get('/signin/verification/email/check')
     async checkVerificationMailSignInCode(@Query('email') email : string, @Query('code') code : string, @Res() res) {
         console.log("email :", email,"\ncode :", code);
-        this.authService.checkVerificationCode(email, code);
-        res.send(200);
+        await this.authService.checkVerificationCode(email, code);
+        res.status(200).send('User email verification success!');
     }
 
     @Get('/login/verification/email/check')
