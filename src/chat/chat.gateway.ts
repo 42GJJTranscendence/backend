@@ -23,13 +23,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleConnection(client: Socket) {
     let token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
-    console.log(token);
     try {
       const user = this.authService.vaildateUserToken(token);
-      client.data.user = user;
+      client.data.user = user
       this.chatService.addClient(client);
 
       this.server.emit('userLogin', { id: user.id, username: user.username });
+      console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
       client.disconnect();
@@ -42,12 +42,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     this.chatService.removeClient(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    console.log("Disconnected ", userInfo);
+    console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
     this.server.emit('userLogout', userInfo);
     this.server.emit('connection', 'disconnected');
   }
 
-  @SubscribeMessage('message')
+  @SubscribeMessage('joinDMRoom')
+  joinDMRoom(client: Socket, payload: any): string {
+    this.chatService.addClient(client);
+    this.chatService.addMessage(payload.username, payload.message);
+    this.server.emit('history', this.chatService.getHistory());
+    console.log(this.chatService.getHistory());
+    return 'Hello world!';
+  }
+
+  @SubscribeMessage('joinDMRoom')
   handleMessage(client: Socket, payload: any): string {
     this.chatService.addClient(client);
     this.chatService.addMessage(payload.username, payload.message);

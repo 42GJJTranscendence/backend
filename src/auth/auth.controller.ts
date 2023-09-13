@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
 import { AuthGuard } from "@nestjs/passport";
-import { User } from "src/users/entity/user.entity";
+import { User } from "src/module/users/entity/user.entity";
 import { GetUser } from "./scurity/get-user.decorator";
 
 
