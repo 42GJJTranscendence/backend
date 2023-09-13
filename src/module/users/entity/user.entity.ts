@@ -1,4 +1,5 @@
 import { Channel } from 'src/chat/channel/channel.entity';
+import { ChannelBanned } from 'src/chat/channel/channel_banned.entity';
 import { Message } from 'src/chat/channel/message.entity';
 import { UserChannel } from 'src/chat/channel/user_channel.entity';
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
@@ -29,7 +30,6 @@ export class User {
   @OneToMany(() => Message, (message) => message.user)
   userMessage: Message[];
 
-  @ManyToMany(() => Channel, (channel) => channel.bannedUsers)
-  bannedChannels: Channel[];
-  
+  @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.user)
+  bannedChannel: ChannelBanned[];
 }
