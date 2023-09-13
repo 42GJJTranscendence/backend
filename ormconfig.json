@@ -1,11 +1,11 @@
 {
-    "type": "postgres",
-    "host": "localhost",
-    "port": "5432",
-    "username": "jaehyuki",
-    "password": "1234",
-    "database": "main",
-    "synchronize": "true",
-    "logging": "true",
-    "entities": ["./src/**/*.entity.{.tx,.js}", "./dist/**/*.entity.{.ts,.js}"]
+  "type": "postgres",
+  "host": "localhost",
+  "port": "5432",
+  "username": "jaehyuki",
+  "password": "1234",
+  "database": "MAIN",
+  "synchronize": "true",
+  "logging": "true",
+  "entities": ["./src/**/*.entity.{.tx,.js}", "./dist/**/*.entity.{.ts,.js}"]
 }
