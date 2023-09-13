@@ -12,7 +12,6 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 //   synchronize: true,
 // };
 
-
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: 'postgresql',
