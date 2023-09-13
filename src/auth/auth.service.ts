@@ -1,25 +1,22 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { User } from "src/module/users/entity/user.entity";
 import { FortyTwoUserDto, LogInRequestDto, SignInRequestDto, FortyTwoTokenJsonInterface } from "./dto/auth.dto";
-import { UserDto } from "src/module/users/dto/user.dto";
 import { UserService } from "src/module/users/service/user.service";
 import * as bcrypt from 'bcrypt';
 import { Payload } from "./scurity/payload.interface";
 import { JwtService } from "@nestjs/jwt";
 import { UserDuplicatException } from "src/common/exception/custom.exception";
 import { MailerService } from "@nestjs-modules/mailer";
-import { RedisClientType } from "redis";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        @Inject('REDIS_CLIENT')
-        private readonly redis: RedisClientType,
         private userService : UserService,
         private jwtService : JwtService,
         private readonly mailerService: MailerService,
     ) {}
+    private emailCode: Map<string, string> = new Map();
 
     async sendVerificationCode(email: string): Promise<void>{
         const code = Math.floor(Math.random() * 1000000).toString();
@@ -28,20 +25,20 @@ export class AuthService {
             subject: 'FortyTwo Transcendence 인증 코드',
             text: `Your verification code is ${code}`,
         });
+        this.emailCode[email] = code;
         console.log("email :", email,"\ncode :", code);
-        await this.redis.set(email, code, { EX : 300 });
     }
 
     async checkVerificationCode(email: string, code: string): Promise<string | undefined> {
-        const codeFind = await this.redis.get(email);
+        const codeFind = this.emailCode[email];
         if (codeFind == null || codeFind != code)
             throw new UnauthorizedException('Email authorize faile.');
         else {
-            await this.redis.del(email);
             const userFind : User = await this.userService.findOneByUserEmail(email);
             if (userFind == null)
                 return undefined;
             const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
+            this.emailCode.delete(email);
             return Promise.resolve(this.jwtService.sign(payload));
         }
     }
