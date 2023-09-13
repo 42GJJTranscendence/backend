@@ -47,7 +47,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('connection', 'disconnected');
   }
 
-  @SubscribeMessage('DM')
+  @SubscribeMessage('joinDMRoom')
+  joinDMRoom(client: Socket, payload: any): string {
+    this.chatService.addClient(client);
+    this.chatService.addMessage(payload.username, payload.message);
+    this.server.emit('history', this.chatService.getHistory());
+    console.log(this.chatService.getHistory());
+    return 'Hello world!';
+  }
+
+  @SubscribeMessage('joinDMRoom')
   handleMessage(client: Socket, payload: any): string {
     this.chatService.addClient(client);
     this.chatService.addMessage(payload.username, payload.message);
