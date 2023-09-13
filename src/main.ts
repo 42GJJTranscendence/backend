@@ -2,10 +2,9 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
-import * as socketio from 'socket.io';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
+import { SocketAdapter } from './config/socket.adapter';
 
 const port = process.env.PORT || 5000;
 
@@ -19,6 +18,8 @@ async function bootstrap() {
     origin: "*",
     credentials: true,
   });
+  
+  app.useWebSocketAdapter(new SocketAdapter(app));
 
   //Swagger
   const config = new DocumentBuilder()

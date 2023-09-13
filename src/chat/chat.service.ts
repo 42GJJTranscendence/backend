@@ -5,7 +5,6 @@ import { Socket, Server } from 'socket.io';
 export class ChatService {
   private clients: Set<Socket> = new Set();
   private history = [];
-  // private chat = new Server(8080, {});
   private roomCount = 1;
   private rooms = new Map<string, Set<Socket>>();
 

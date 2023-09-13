@@ -1,6 +1,6 @@
 import { Get, Controller, Param, Query, NotFoundException } from "@nestjs/common";
 import { MatchService } from "./match.service";
-import { UserService } from 'src/users/service/user.service';
+import { UserService } from 'src/module/users/service/user.service';
 
 @Controller('match')
 export class MatchController {

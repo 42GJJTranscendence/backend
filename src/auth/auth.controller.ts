@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
 import { AuthGuard } from "@nestjs/passport";
-import { User } from "src/users/entity/user.entity";
+import { User } from "src/module/users/entity/user.entity";
 import { GetUser } from "./scurity/get-user.decorator";
 
 
@@ -30,19 +30,18 @@ export class AuthController {
     @Post('/signin')
     async SignInUser(@Body() signInRequestDto : SignInRequestDto, @Res() res) {
         console.log("username : ", signInRequestDto.username, "\npassword : ", signInRequestDto.password, "\neMail : ", signInRequestDto.email,"\nfortyTwoToken : ", signInRequestDto.fortyTwoToken);
-        const jwtAccessToken = await this.authService.signInUser(signInRequestDto);
+        await this.authService.signInUser(signInRequestDto);
 
-        console.log('ACCESS_TOKEN : ', jwtAccessToken);
-        res.send(jwtAccessToken);
+        res.status(201).send('User created successfully');
     }
 
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
         console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
 
-        const logInResponseDto = await this.authService.validateUserPassword(logInRequestDto);
+        const userEmail = await this.authService.validateUserPassword(logInRequestDto);
 
-        return res.json({ logInResponseDto });
+        return res.send(userEmail);
     }
 
     @Get('/check/duplication')
@@ -50,37 +49,37 @@ export class AuthController {
         return await this.authService.checkDuplication(username);
     }
 
-    @Get('/verification/email')
-    async sendVerificationMail(@Query('email') email : string, @Res() res) {
+    @Post('/signin/verification/email')
+    async sendVerificationSignInMail(@Query('email') email : string, @Res() res) {
         this.authService.sendVerificationCode(email);
-        res.send(200);
+        res.status(201).send('User verification code sended.');
     }
 
-    @Get('/verification/email/check')
-    async checkVerificationMailCode(@Query('email') email : string, @Query('code') code : string) {
+    @Post('/login/verification/email')
+    async sendVerificationLogInMail(@Query('email') email : string, @Res() res) {
+        this.authService.sendVerificationCode(email);
+        res.status(201).send('User verification code sended.');
+    }
+
+    @Get('/signin/verification/email/check')
+    async checkVerificationMailSignInCode(@Query('email') email : string, @Query('code') code : string, @Res() res) {
         console.log("email :", email,"\ncode :", code);
-        return await this.authService.checkVerificationCode(email, code);
+        await this.authService.checkVerificationCode(email, code);
+        res.status(200).send('User email verification success!');
     }
 
-    @Get('/cookie')
-    async CookieTest(@Res() res) : Promise<any>{
-        // 쿠키 설정
+    @Get('/login/verification/email/check')
+    async checkVerificationMailLogInCode(@Query('email') email : string, @Query('code') code : string, @Res() res) {
+        console.log("email :", email,"\ncode :", code);
+
+        const jwtAccessToken =  await this.authService.checkVerificationCode(email, code);
         const cookieOptions = {
-            httpOnly: true, // 클라이언트 스크립트로 쿠키 접근 불가
-            maxAge: 3600, // 쿠키 유효 기간 (초)
-            // secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
-            // 다른 쿠키 옵션들도 설정 가능
+            httpOnly: true,
+            maxAge: 36000,
         };
-
-        const logInRequestDto = new LogInRequestDto();
-        logInRequestDto.username = 'jaehyuki';
-        logInRequestDto.password = '1234';
-        const jwtAccessToken = await this.authService.validateUserPassword(logInRequestDto);
-
-        console.log('ACCESS_TOKEN : ', jwtAccessToken);
-
+        
         res.cookie('access_token', jwtAccessToken, cookieOptions);
-        res.redirect(`${process.env.FRONT_HOME_URL}`);
+        res.send(jwtAccessToken)
     }
 
     @Get('/test')
