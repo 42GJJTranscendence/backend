@@ -8,9 +8,6 @@ import { UsersModule } from 'src/module/users/users.module';
 import { UserService } from 'src/module/users/service/user.service';
 import { JwtStrategy } from './scurity/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { RedisModule } from 'src/database/redis/redis.module';
-import { RedisClientType } from "redis";
-
 
 @Module({
     imports: [TypeOrmModule.forFeature([User]), UsersModule,
@@ -19,7 +16,6 @@ import { RedisClientType } from "redis";
         signOptions: { expiresIn: '300s' },
       }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    RedisModule,
     ],
     controllers: [AuthController],
     providers: [AuthService, UserService, JwtStrategy],
