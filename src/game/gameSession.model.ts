@@ -3,6 +3,7 @@ import { Ball } from './ball.model';
 import { Player } from './player.model';
 import { Match } from './match/match.entity';
 import { MatchService } from './match/match.service';
+import { Logger } from '@nestjs/common';
 
 export class GameSession {
   private roomName: string;
@@ -165,7 +166,8 @@ export class GameSession {
         result === 'win' ? 'lose' : 'win',
       );
       this.isGameOn = false;
-      const match = this.makeMatch(playerType); // DB 저장 
+      const match = this.makeMatch(playerType); // DB 저장
+      Logger.log("[Game] Match Info Home Id " + match.userHomeId.id + " Away Id " + match.userAwayId.id +  " <- is about to save on DB")
       this.matchService.createMatch(match);
       this.onGameEnd(this);
       this.leaveRoom();
@@ -177,9 +179,9 @@ export class GameSession {
   makeMatch(playerType: string): Match {
     const match = new Match();
     match.start_at = new Date();
-    match.user_home = this.homePlayer.socket.data.user;
-    match.user_away = this.awayPlayer.socket.data.user;
-    match.winner = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
+    match.userHomeId = this.homePlayer.socket.data.user;
+    match.userAwayId = this.awayPlayer.socket.data.user;
+    match.winnerId = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
     match.user_home_score = this.scores.home;
     match.user_away_score = this.scores.away;
     return match;

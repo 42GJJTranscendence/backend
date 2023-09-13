@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LogInRequestDto, SignInRequestDto } from "./dto/auth.dto";
 import { AuthGuard } from "@nestjs/passport";
@@ -37,7 +37,7 @@ export class AuthController {
 
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
-        console.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
+        Logger.log("LogInRequestDto : {\n", "\n    username: ", logInRequestDto.username, "\n  password: ", logInRequestDto.password);
 
         const userEmail = await this.authService.validateUserPassword(logInRequestDto);
 

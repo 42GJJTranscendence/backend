@@ -8,15 +8,15 @@ export class Match {
 
     @ManyToOne(() => User)
     @JoinColumn()
-    user_home: User;
+    userHomeId: User;
 
     @ManyToOne(() => User)
     @JoinColumn()
-    user_away: User;
+    userAwayId: User;
 
     @ManyToOne(() => User)
     @JoinColumn()
-    winner: User;
+    winnerId: User;
 
     @Column({ type: 'int', default: 0 })
     user_home_score: number;
