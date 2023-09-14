@@ -26,6 +26,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user = this.authService.vaildateUserToken(token);
       client.data.user = user
+      client.data.rooms = new Set<string>();
+
       this.chatService.addClient(client);
 
       this.server.emit('userLogin', { id: user.id, username: user.username });
@@ -40,38 +42,40 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    this.chatService.removeClient(client);
+    this.chatService.disconnectClient(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
+    console.log("Chat-Socket : User leave room ", client.data.rooms);
     this.server.emit('userLogout', userInfo);
     this.server.emit('connection', 'disconnected');
   }
 
-  @SubscribeMessage('joinDMRoom')
-  joinDMRoom(client: Socket, payload: any): string {
-    this.chatService.addClient(client);
-    this.chatService.addMessage(payload.username, payload.message);
-    this.server.emit('history', this.chatService.getHistory());
-    console.log(this.chatService.getHistory());
-    return 'Hello world!';
-  }
+  // @SubscribeMessage('joinDMRoom')
+  // joinDMRoom(client: Socket, payload: any): string {
+  //   const targetUserName = payload.username;
+  //   this.chatService.getDMChannel(client.gettargetUserName);
+  //   // this.chatService.addMessage(payload.username, payload.message);
+  //   // this.server.emit('history', this.chatService.getHistory());
+  //   // console.log(this.chatService.getHistory());
+  //   return 'Hello world!';
+  // }
 
-  @SubscribeMessage('joinDMRoom')
-  handleMessage(client: Socket, payload: any): string {
-    this.chatService.addClient(client);
-    this.chatService.addMessage(payload.username, payload.message);
-    this.server.emit('history', this.chatService.getHistory());
-    console.log(this.chatService.getHistory());
-    return 'Hello world!';
-  }
+  // @SubscribeMessage('joinDMRoom')
+  // handleMessage(client: Socket, payload: any): string {
+  //   this.chatService.addClient(client);
+  //   this.chatService.addMessage(payload.username, payload.message);
+  //   this.server.emit('history', this.chatService.getHistory());
+  //   console.log(this.chatService.getHistory());
+  //   return 'Hello world!';
+  // }
 
-  joinRoom(roomName: string, client: Socket): void {
-    const room = this.chatService.getRoomClients(roomName);
-    if (room) {
-      client.join(roomName);
-      room.add(client);
-    }
-  }
+  // joinRoom(roomName: string, client: Socket): void {
+  //   const room = this.chatService.getRoomClients(roomName);
+  //   if (room) {
+  //     client.join(roomName);
+  //     room.add(client);
+  //   }
+  // }
 
   leaveRoom(roomName: string, client: Socket): void {
     client.leave(roomName);

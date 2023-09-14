@@ -1,9 +1,8 @@
 import { ChannelType } from "src/common/enums";
 import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { UserChannel } from "./user_channel.entity";
-import { User } from "src/module/users/entity/user.entity";
-import { Message } from "./message.entity";
-import { ChannelBanned } from "./channel_banned.entity";
+import { UserChannel } from "../user_channel/user_channel.entity";
+import { Message } from "../message/message.entity";
+import { ChannelBanned } from "../channel_banned/channel_banned.entity";
 
 @Entity('channel')
 export class Channel
