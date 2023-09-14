@@ -75,12 +75,14 @@ export class GameSession {
 
   // disconnect 될 때, 먼저 disconnect 된 user가 lose
   disconnectGameLoop(client: Socket) {
-    this.stopGameLoop()
     if (this.isGameOn === true)
     {
       const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
+      this.homePlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'lose' : 'win');
+      this.awayPlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'win' : 'lose');
       this.matchService.createMatch(match); // DB 저장
     }
+    this.stopGameLoop()
   }
 
   stopGameLoop() {
