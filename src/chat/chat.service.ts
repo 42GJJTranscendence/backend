@@ -4,24 +4,26 @@ import { Socket, Server } from 'socket.io';
 @Injectable()
 export class ChatService {
   private clients: Set<Socket> = new Set();
-  private history = [];
-  private roomCount = 1;
   private rooms = new Map<string, Set<Socket>>();
 
   addClient(client: Socket) {
     this.clients.add(client);
   }
 
-  removeClient(client: Socket) {
+  disconnectClient(client: Socket) {
+    const userJoinedRooms = client.data.rooms;
+    for (const roomName of userJoinedRooms) {
+      const room = this.rooms.get(roomName);
+    
+      if (room) {
+        room.delete(client);
+
+        if (room.size === 0) {
+          this.rooms.delete(roomName);
+        }
+      }
+    }
     this.clients.delete(client);
-  }
-
-  addMessage(username: string, message: string) {
-    this.history = [...this.history, { username, message }];
-  }
-
-  getHistory() {
-    return this.history;
   }
 
   createRoom(roomName: string): void {

@@ -13,7 +13,7 @@ import { PassportModule } from '@nestjs/passport';
     imports: [TypeOrmModule.forFeature([User]), UsersModule,
     JwtModule.register({
         secret: process.env.JWT_SECRET,
-        signOptions: { expiresIn: '300s' },
+        signOptions: { expiresIn: '30000s' },
       }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     ],

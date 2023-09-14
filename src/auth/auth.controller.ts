@@ -64,15 +64,15 @@ export class AuthController {
     @Get('/signin/verification/email/check')
     async checkVerificationMailSignInCode(@Query('email') email : string, @Query('code') code : string, @Res() res) {
         console.log("email :", email,"\ncode :", code);
-        await this.authService.checkVerificationCode(email, code);
+        await this.authService.checkVerificationCode(email, code)
         res.status(200).send('User email verification success!');
     }
 
     @Get('/login/verification/email/check')
-    async checkVerificationMailLogInCode(@Query('email') email : string, @Query('code') code : string, @Res() res) {
-        console.log("email :", email,"\ncode :", code);
+    async checkVerificationMailLogInCode(@Query('username') username : string, @Query('code') code : string, @Res() res) {
+        console.log("2FA REQ {username :", username,"\ncode :", code, "}");
 
-        const jwtAccessToken =  await this.authService.checkVerificationCode(email, code);
+        const jwtAccessToken =  await this.authService.check2FACode(username, code);
         const cookieOptions = {
             httpOnly: true,
             maxAge: 36000,
