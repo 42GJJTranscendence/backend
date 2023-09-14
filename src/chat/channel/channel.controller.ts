@@ -4,6 +4,7 @@ import { createChannelRequestDto } from "./channel.dto";
 import { AuthGuard } from "@nestjs/passport";
 import { GetUser } from "src/auth/scurity/get-user.decorator";
 import { User } from "src/module/users/entity/user.entity";
+import { MessageService } from "../message/message.service";
 
 @Controller('channels')
 export class ChannelController {
