@@ -29,20 +29,31 @@ export class AuthService {
         console.log("email :", email,"\ncode :", code);
     }
 
-    async checkVerificationCode(email: string, code: string): Promise<string | undefined> {
+    async checkVerificationCode(email: string, code: string): Promise<Boolean> {
         const codeFind = this.emailCode[email];
         if (codeFind == null || codeFind != code)
             throw new UnauthorizedException('Email authorize faile.');
         else {
-            const userFind : User = await this.userService.findOneByUserEmail(email);
-            if (userFind == null)
-                return undefined;
+            this.emailCode.delete(email);
+            return true;
+        }
+    }
+
+    async check2FACode(username : string, code: string): Promise<string | undefined> {
+        const userFind : User = await this.userService.findOneByUsername(username);
+        if (userFind == null)
+            throw new UnauthorizedException('Can\'t find username');
+
+        const email = userFind.eMail;
+        const codeFind = this.emailCode[email];
+        if (codeFind == null || codeFind != code)
+            throw new UnauthorizedException('Email authorize faile.');
+        else {
             const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
             this.emailCode.delete(email);
             return Promise.resolve(this.jwtService.sign(payload));
         }
     }
-
     async getToken(code: string, res: Response): Promise<string> {
         console.log("now retrieving token...");
         const body = {
