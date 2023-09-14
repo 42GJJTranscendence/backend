@@ -3,6 +3,7 @@ import { GameSession } from './gameSession.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { MatchService } from './match/match.service';
+import { UserService } from 'src/module/users/service/user.service';
 
 @Injectable()
 export class GameService {
@@ -10,7 +11,8 @@ export class GameService {
     private gameSessions: GameSession[] = [];
 
 	constructor(
-		private readonly matchService: MatchService
+		private readonly matchService: MatchService,
+		private readonly userService: UserService
 	  ) {}
 	
 	// disconnect 될 때
@@ -33,15 +35,15 @@ export class GameService {
 			const homePlayerSocket = this.matchingQueue.dequeue();
 			const awayPlayerSocket = this.matchingQueue.dequeue();
 
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService);
+			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService);
 			this.gameSessions.push(gameSession);
 		}
 	}
-  
+	
 	addClient(client: Socket)
 	{
 		Logger.log("[Game] addClient -> client socket id : " + client.id)
-		Logger.log("queue size : " + this.matchingQueue.size())
+		Logger.log("[Game] queue size : " + this.matchingQueue.size())
 		if (this.matchingQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });

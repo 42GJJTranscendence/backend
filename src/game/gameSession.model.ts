@@ -4,6 +4,7 @@ import { Player } from './player.model';
 import { Match } from './match/match.entity';
 import { MatchService } from './match/match.service';
 import { Logger } from '@nestjs/common';
+import { UserService } from 'src/module/users/service/user.service';
 
 export class GameSession {
   private roomName: string;
@@ -12,6 +13,7 @@ export class GameSession {
   private moveBall: NodeJS.Timer;
   private scores = { home: 0, away: 0 };
   private players = { home: "", away: "" };
+  private imgUrl = { home: "", away: "" };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
   private height: number = 960;
@@ -19,13 +21,15 @@ export class GameSession {
   private ballSize: number = 50;
   private ball: Ball = new Ball(this.height / 2, this.width / 2);
   private matchService: MatchService;
+  private userService: UserService;
   private isGameOn: boolean;
 
   constructor(
     homeSocket: Socket,
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
-    matchService: MatchService
+    matchService: MatchService,
+    userService: UserService
   ) {
     this.homePlayer = new Player(
       { x: this.height / 2 - this.paddleLength / 2, y: 0 },
@@ -45,12 +49,30 @@ export class GameSession {
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;
-    
+    this.userService = userService;
+
+
     this.players.home = this.homePlayer.socket.data.user.username
     this.players.away = this.awayPlayer.socket.data.user.username
+    this.initialize();
+
     this.homePlayer.socket.to(this.roomName).emit('player',this.players);
     this.awayPlayer.socket.to(this.roomName).emit('player',this.players);
   }
+
+  async initialize(): Promise<void> {
+    const homeUser = await this.userService.findOneByUsername(this.players.home);
+    const awayUser = await this.userService.findOneByUsername(this.players.away);
+
+    if (homeUser && awayUser) {
+        Logger.log("home img : " + homeUser.imageUrl);
+        Logger.log("away img : " + awayUser.imageUrl);
+        this.imgUrl.home = homeUser.imageUrl;
+        this.imgUrl.away = awayUser.imageUrl;
+        this.homePlayer.socket.to(this.roomName).emit('imgUrl',this.imgUrl);
+        this.awayPlayer.socket.to(this.roomName).emit('imgUrl',this.imgUrl);
+    }
+}
 
   includesClient(client: Socket): boolean {
     return (
