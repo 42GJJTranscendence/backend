@@ -11,6 +11,7 @@ export class GameSession {
   private awayPlayer: Player;
   private moveBall: NodeJS.Timer;
   private scores = { home: 0, away: 0 };
+  private players = { home: "", away: "" };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
   private height: number = 960;
@@ -44,6 +45,11 @@ export class GameSession {
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;
+    
+    this.players.home = this.homePlayer.socket.data.user.username
+    this.players.away = this.awayPlayer.socket.data.user.username
+    this.homePlayer.socket.to(this.roomName).emit('player',this.players);
+    this.awayPlayer.socket.to(this.roomName).emit('player',this.players);
   }
 
   includesClient(client: Socket): boolean {
@@ -54,6 +60,7 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
+      Logger.log("[GAME] Game Start! ")
       this.isGameOn = true;
       this.ball.setBallPostion({
         x: this.height / 2 - this.ballSize / 2,
@@ -109,14 +116,14 @@ export class GameSession {
       }
     } else if (this.ball.position.y > this.width - this.ballSize) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
-        console.log(
-          this.ball.position.x,
-          this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
-        );
-        console.log(
-          this.ball.position.x -
-            (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
-        );
+        // console.log(
+        //   this.ball.position.x,
+        //   this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
+        // );
+        // console.log(
+        //   this.ball.position.x -
+        //     (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
+        // );
         this.ball.direction =
           (Math.PI * 3) / 2 +
           (this.ball.position.x +

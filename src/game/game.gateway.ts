@@ -24,7 +24,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
       try {
         const user = await this.authService.vaildateUserToken(token);
-        Logger.log("[Game] user.id : " + user.id + " user.username : " + user.username);
+        Logger.log("[Game] user.id : " + user.id + "| user.username : " + user.username);
         if (user) {
             client.data.user = user;
             this.gameService.addClient(client);
@@ -40,7 +40,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       
   handleDisconnect(client: Socket) {
-    Logger.log("Game : Socket Disconnect : " + client.id);
+    Logger.log("[Game] Socket Disconnect : " + client.id);
     this.gameService.removeClient(client);
   }
 
