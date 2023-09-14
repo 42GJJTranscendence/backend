@@ -46,13 +46,13 @@ export class AuthService {
 
         const email = userFind.eMail;
         const codeFind = this.emailCode[email];
-        if (codeFind == null || codeFind != code)
-            throw new UnauthorizedException('Email authorize faile.');
-        else {
+        // if (codeFind == null || codeFind != code)
+            // throw new UnauthorizedException('Email authorize faile.');
+        // else {
             const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
             this.emailCode.delete(email);
             return Promise.resolve(this.jwtService.sign(payload));
-        }
+        // }
     }
     async getToken(code: string, res: Response): Promise<string> {
         console.log("now retrieving token...");
