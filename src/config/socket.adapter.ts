@@ -9,10 +9,13 @@ export class SocketAdapter extends IoAdapter {
       server?: any;
     },
   ) {
-    const server = super.createIOServer(port, { ...options, cors: {
+    const server = super.createIOServer(port, {
+      ...options,
+      cors: {
         origin: process.env.FRONT_DOMAIN,
         credentials: true,
-      }});
+      },
+    });
     return server;
   }
 }
