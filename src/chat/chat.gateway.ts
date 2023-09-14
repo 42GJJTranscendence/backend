@@ -5,30 +5,39 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { ChatService } from './chat.service';
 import { Server } from 'http';
 import { Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
+import { MessageService } from './message/message.service';
+import { UserService } from 'src/module/users/service/user.service';
+import { ChannelService } from './channel/channel.service';
+import { User } from 'src/module/users/entity/user.entity';
+import { Channel } from './channel/channel.entity';
 
 @WebSocketGateway({
   namespace: 'chat',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
-    private readonly chatService: ChatService,
-    private readonly authService: AuthService) {}
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+    private readonly channelService: ChannelService,
+    private readonly messageService: MessageService) { }
 
   @WebSocketServer()
   server: Server;
 
+  private clients: Set<Socket> = new Set();
+  private rooms = new Map<string, Set<Socket>>();
+
   handleConnection(client: Socket) {
-    let token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+    const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
       client.data.user = user
       client.data.rooms = new Set<string>();
 
-      this.chatService.addClient(client);
+      this.clients.add(client);
 
       this.server.emit('userLogin', { id: user.id, username: user.username });
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
@@ -36,13 +45,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log(error.response);
       client.disconnect();
     }
-    const clients = Array.from(this.chatService.getAllClients());
-    const allUserInfo = clients.map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
+    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
     this.server.emit('connection', allUserInfo);
   }
 
   handleDisconnect(client: Socket) {
-    this.chatService.disconnectClient(client);
+    this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
     console.log("Chat-Socket : User leave room ", client.data.rooms);
@@ -50,38 +58,52 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('connection', 'disconnected');
   }
 
-  // @SubscribeMessage('joinDMRoom')
-  // joinDMRoom(client: Socket, payload: any): string {
-  //   const targetUserName = payload.username;
-  //   this.chatService.getDMChannel(client.gettargetUserName);
-  //   // this.chatService.addMessage(payload.username, payload.message);
-  //   // this.server.emit('history', this.chatService.getHistory());
-  //   // console.log(this.chatService.getHistory());
-  //   return 'Hello world!';
-  // }
+  @SubscribeMessage('joinChannel')
+  handleJoinChannel(client: Socket) {
+    const channelId = (Array.isArray(client.handshake.query.channelId) ? client.handshake.query.channelId[0] : client.handshake.query.channelId);
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
-  // @SubscribeMessage('joinDMRoom')
-  // handleMessage(client: Socket, payload: any): string {
-  //   this.chatService.addClient(client);
-  //   this.chatService.addMessage(payload.username, payload.message);
-  //   this.server.emit('history', this.chatService.getHistory());
-  //   console.log(this.chatService.getHistory());
-  //   return 'Hello world!';
-  // }
+    if (!this.rooms.has(channelId))
+      this.rooms.set(channelId, new Set());
 
-  // joinRoom(roomName: string, client: Socket): void {
-  //   const room = this.chatService.getRoomClients(roomName);
-  //   if (room) {
-  //     client.join(roomName);
-  //     room.add(client);
-  //   }
-  // }
+    client.join(channelId);
+    client.data.rooms.add(channelId);
+    client.to(channelId).emit('userJoin', userInfo, channelId);
 
-  leaveRoom(roomName: string, client: Socket): void {
-    client.leave(roomName);
-    const room = this.chatService.getRoomClients(roomName);
-    if (room) {
-      room.delete(client);
+    console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
+  }
+
+  @SubscribeMessage('leaveChannel')
+  handleLeaveChannel(client: Socket) {
+    const channelId = (Array.isArray(client.handshake.query.channelId) ? client.handshake.query.channelId[0] : client.handshake.query.channelId).toString();
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    
+    client.to(channelId).emit('userLeave', userInfo, channelId);
+    client.leave(channelId);
+    client.data.rooms.delete(channelId);
+
+    if (this.rooms.has(channelId))
+    {
+      this.rooms.get(channelId).delete(client);
+      if (this.rooms.get(channelId).size == 0)
+        this.rooms.delete(channelId);
     }
+
+    console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
+  }
+
+  @SubscribeMessage('sendMessage')
+  async handleSendMessage(client: Socket, payload: any) {
+    const channelId = payload.channelId;
+    const message = payload.message;
+
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    client.to(channelId).emit('receiveMeesage', userInfo, payload);
+
+    const user : User = await this.userService.findOneByUsername(userInfo.username);
+    const channel : Channel = await this.channelService.findOneById(channelId);
+    this.messageService.createMessage(user, channel, message);
+
+    console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
   }
 }

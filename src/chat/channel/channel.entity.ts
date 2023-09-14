@@ -19,7 +19,7 @@ export class Channel
   @Column({ type: 'enum', enum: ChannelType })
   type: ChannelType;
 
-  @OneToMany(() => UserChannel, (userChannel) => userChannel.channel)
+  @OneToMany(() => UserChannel, (userChannel) => userChannel.channel, { onDelete: 'CASCADE' })
   userChannel: UserChannel[];
 
   @OneToMany(() => Message, (message) => message.channel)

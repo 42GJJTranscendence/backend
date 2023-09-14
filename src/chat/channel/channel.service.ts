@@ -17,6 +17,10 @@ export class ChannelService
         private userChannelService : UserChannelService
     ) {}
 
+    async findOneById(id : number) : Promise<Channel> {
+        return await this.channelRepository.findOne({ where : {id}});
+    }
+
     async createChannel(createChannelDto : createChannelRequestDto, user : User) : Promise<Channel | undefined> {
         const saltRounds = 10;
         const channel = new Channel();
