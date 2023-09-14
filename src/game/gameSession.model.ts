@@ -3,6 +3,7 @@ import { Ball } from './ball.model';
 import { Player } from './player.model';
 import { Match } from './match/match.entity';
 import { MatchService } from './match/match.service';
+import { Logger } from '@nestjs/common';
 
 export class GameSession {
   private roomName: string;
@@ -10,6 +11,7 @@ export class GameSession {
   private awayPlayer: Player;
   private moveBall: NodeJS.Timer;
   private scores = { home: 0, away: 0 };
+  private players = { home: "", away: "" };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
   private height: number = 960;
@@ -17,6 +19,7 @@ export class GameSession {
   private ballSize: number = 50;
   private ball: Ball = new Ball(this.height / 2, this.width / 2);
   private matchService: MatchService;
+  private isGameOn: boolean;
 
   constructor(
     homeSocket: Socket,
@@ -42,6 +45,11 @@ export class GameSession {
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;
+    
+    this.players.home = this.homePlayer.socket.data.user.username
+    this.players.away = this.awayPlayer.socket.data.user.username
+    this.homePlayer.socket.to(this.roomName).emit('player',this.players);
+    this.awayPlayer.socket.to(this.roomName).emit('player',this.players);
   }
 
   includesClient(client: Socket): boolean {
@@ -52,6 +60,8 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
+      Logger.log("[GAME] Game Start! ")
+      this.isGameOn = true;
       this.ball.setBallPostion({
         x: this.height / 2 - this.ballSize / 2,
         y: this.width / 2 - this.ballSize / 2,
@@ -72,9 +82,14 @@ export class GameSession {
 
   // disconnect 될 때, 먼저 disconnect 된 user가 lose
   disconnectGameLoop(client: Socket) {
+    if (this.isGameOn === true)
+    {
+      const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
+      this.homePlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'lose' : 'win');
+      this.awayPlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'win' : 'lose');
+      this.matchService.createMatch(match); // DB 저장
+    }
     this.stopGameLoop()
-    const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
-    this.matchService.createMatch(match); // DB 저장
   }
 
   stopGameLoop() {
@@ -101,14 +116,14 @@ export class GameSession {
       }
     } else if (this.ball.position.y > this.width - this.ballSize) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
-        console.log(
-          this.ball.position.x,
-          this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
-        );
-        console.log(
-          this.ball.position.x -
-            (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
-        );
+        // console.log(
+        //   this.ball.position.x,
+        //   this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
+        // );
+        // console.log(
+        //   this.ball.position.x -
+        //     (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
+        // );
         this.ball.direction =
           (Math.PI * 3) / 2 +
           (this.ball.position.x +
@@ -159,7 +174,9 @@ export class GameSession {
         'game-result',
         result === 'win' ? 'lose' : 'win',
       );
-      const match = this.makeMatch(playerType); // DB 저장 
+      this.isGameOn = false;
+      const match = this.makeMatch(playerType); // DB 저장
+      Logger.log("[Game] Match Info Home Id " + match.userHomeId.id + " Away Id " + match.userAwayId.id +  " <- is about to save on DB")
       this.matchService.createMatch(match);
       this.onGameEnd(this);
       this.leaveRoom();
@@ -171,9 +188,9 @@ export class GameSession {
   makeMatch(playerType: string): Match {
     const match = new Match();
     match.start_at = new Date();
-    match.user_home = this.homePlayer.socket.data.user;
-    match.user_away = this.awayPlayer.socket.data.user;
-    match.winner = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
+    match.userHomeId = this.homePlayer.socket.data.user;
+    match.userAwayId = this.awayPlayer.socket.data.user;
+    match.winnerId = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
     match.user_home_score = this.scores.home;
     match.user_away_score = this.scores.away;
     return match;
