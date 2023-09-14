@@ -1,5 +1,5 @@
 import { User } from "src/module/users/entity/user.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Channel } from "../channel/channel.entity";
 
 @Entity('message')
@@ -10,11 +10,11 @@ export class Message{
     @Column()
     content: string;
     
-    @Column({type: 'int'})
+    @JoinColumn({ name: 'userlId' })
     @ManyToOne(() => User, (user) => user.userMessage)
     user: User;
     
-    @Column({type: 'int'})
+    @JoinColumn({ name: 'channelId' })
     @ManyToOne(() => Channel, (channel) => channel.channelMessage)
     channel: Channel;
 

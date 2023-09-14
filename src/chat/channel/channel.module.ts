@@ -7,6 +7,7 @@ import { UserChannel } from "../user_channel/user_channel.entity";
 import { ChannelController } from "./channel.controller";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
+import { MessageService } from "../message/message.service";
 
 
 @Module({
