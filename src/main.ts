@@ -13,10 +13,11 @@ async function bootstrap() {
 
   console.log(port);
   const app = await NestFactory.create(AppModule);
+  console.log("FRONT DOMAIN", process.env.FRONT_DOMAIN);
 
   //Cors
   app.enableCors({
-    origin: "*",
+    origin: process.env.FRONT_DOMAIN,
     credentials: true,
   });
   app.useWebSocketAdapter(new SocketAdapter(app));
