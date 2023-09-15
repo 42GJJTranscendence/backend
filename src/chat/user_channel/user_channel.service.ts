@@ -26,4 +26,11 @@ export class UserChannelService {
       ])
       .execute();
   }
+
+  async findByUser(user: User) : Promise<UserChannel[]> {
+    return await this.userChannelRepository.find({
+      where: { user: user }, // user 엔티티와 매핑된 user 필드를 사용하여 조회
+      relations: ['channel'], 
+    });
+  }
 }
