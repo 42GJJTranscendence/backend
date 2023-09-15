@@ -39,7 +39,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.clients.add(client);
 
-      this.server.emit('userLogin', { id: user.id, username: user.username });
+      this.server.emit('res::user::connect', { id: user.id, username: user.username });
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
@@ -54,11 +54,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
     console.log("Chat-Socket : User leave room ", client.data.rooms);
-    this.server.emit('userLogout', userInfo);
+    this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
   }
 
-  @SubscribeMessage('joinChannel')
+  @SubscribeMessage('req::room::join')
   handleJoinChannel(client: Socket, payload: any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
@@ -67,17 +67,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.join(channelId);
     client.data.rooms.add(channelId);
-    client.to(channelId).emit('userJoin', userInfo, channelId);
+    client.to(channelId).emit('res::room::join', userInfo, channelId);
 
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
 
-  @SubscribeMessage('leaveChannel')
+  @SubscribeMessage('req::room::leave')
   handleLeaveChannel(client: Socket, payload : any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
     
-    client.to(channelId).emit('userLeave', userInfo, { channelId: channelId });
+    client.to(channelId).emit('res::room::leave', userInfo, { channelId: channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 
@@ -91,13 +91,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
   }
 
-  @SubscribeMessage('sendMessage')
+  @SubscribeMessage('req::message::send')
   async handleSendMessage(client: Socket, payload: any) {
     const channelId = payload.channelId;
     const message = payload.content;
 
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    client.to(channelId).emit('receiveMeesage', userInfo, payload);
+    client.to(channelId).emit('res::message::receive', userInfo, payload);
 
     const user : User = await this.userService.findOneByUsername(userInfo.username);
     const channel : Channel = await this.channelService.findOneById(channelId);
