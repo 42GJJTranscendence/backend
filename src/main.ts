@@ -5,6 +5,7 @@ import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
 import { SocketAdapter } from './config/socket.adapter';
+import * as cookieParser from 'cookie-parser';
 
 const port = process.env.PORT || 5000;
 
@@ -18,9 +19,9 @@ async function bootstrap() {
     origin: "*",
     credentials: true,
   });
-  
   app.useWebSocketAdapter(new SocketAdapter(app));
 
+  app.use(cookieParser());
   //Swagger
   const config = new DocumentBuilder()
       .setTitle('TS API DOCS')

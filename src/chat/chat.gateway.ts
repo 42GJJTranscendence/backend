@@ -13,6 +13,7 @@ import { UserService } from 'src/module/users/service/user.service';
 import { ChannelService } from './channel/channel.service';
 import { User } from 'src/module/users/entity/user.entity';
 import { Channel } from './channel/channel.entity';
+import { UserChannelService } from './user_channel/user_channel.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -22,6 +23,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly channelService: ChannelService,
+    private readonly userChannelService: UserChannelService,
     private readonly messageService: MessageService) { }
 
   @WebSocketServer()
@@ -72,17 +74,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
 
+  @SubscribeMessage('req::room::history')
+  handleMessageHistory(client: Socket, payload: any) {
+    if (this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
+      const messageHistory = this.messageService.findMessageHistory(payload.channelId);
+      client.emit('res::room::history', messageHistory)
+    }
+  }
+
   @SubscribeMessage('req::room::leave')
-  handleLeaveChannel(client: Socket, payload : any) {
+  handleLeaveChannel(client: Socket, payload: any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
-    
+
     client.to(channelId).emit('res::room::leave', userInfo, { channelId: channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 
-    if (this.rooms.has(channelId))
-    {
+    if (this.rooms.has(channelId)) {
       this.rooms.get(channelId).delete(client);
       if (this.rooms.get(channelId).size == 0)
         this.rooms.delete(channelId);
@@ -99,8 +108,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     client.to(channelId).emit('res::message::receive', userInfo, payload);
 
-    const user : User = await this.userService.findOneByUsername(userInfo.username);
-    const channel : Channel = await this.channelService.findOneById(channelId);
+    const user: User = await this.userService.findOneByUsername(userInfo.username);
+    const channel: Channel = await this.channelService.findOneById(channelId);
     this.messageService.createMessage(user, channel, message);
 
     console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
