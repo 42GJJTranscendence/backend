@@ -41,7 +41,7 @@ export class GameSession {
       this.paddleLength,
       awaySocket,
     );
-    this.roomName = `game-${homeSocket.id}-${awaySocket.id}`;
+    this.roomName = `game-${homeSocket.data.user.username}-${awaySocket.data.user.username}`;
 
     homeSocket.join(this.roomName);
     awaySocket.join(this.roomName);
@@ -56,8 +56,8 @@ export class GameSession {
     this.players.away = this.awayPlayer.socket.data.user.username
     this.initialize();
 
-    this.homePlayer.socket.to(this.roomName).emit('player',this.players);
-    this.awayPlayer.socket.to(this.roomName).emit('player',this.players);
+    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.players);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.players);
   }
 
   async initialize(): Promise<void> {
@@ -65,13 +65,12 @@ export class GameSession {
     const awayUser = await this.userService.findOneByUsername(this.players.away);
 
     if (homeUser && awayUser) {
-        Logger.log("home img : " + homeUser.imageUrl);
-        Logger.log("away img : " + awayUser.imageUrl);
         this.imgUrl.home = homeUser.imageUrl;
         this.imgUrl.away = awayUser.imageUrl;
-        this.homePlayer.socket.to(this.roomName).emit('imgUrl',this.imgUrl);
-        this.awayPlayer.socket.to(this.roomName).emit('imgUrl',this.imgUrl);
+        this.homePlayer.socket.to(this.roomName).emit('res::player::img',this.imgUrl);
+        this.awayPlayer.socket.to(this.roomName).emit('res::player::img',this.imgUrl);
     }
+    Logger.log("[GAME] Game Start! ")
 }
 
   includesClient(client: Socket): boolean {
@@ -82,7 +81,6 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
-      Logger.log("[GAME] Game Start! ")
       this.isGameOn = true;
       this.ball.setBallPostion({
         x: this.height / 2 - this.ballSize / 2,
@@ -107,8 +105,8 @@ export class GameSession {
     if (this.isGameOn === true)
     {
       const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
-      this.homePlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'lose' : 'win');
-      this.awayPlayer.socket.emit('game-result', (client === this.homePlayer.socket) ? 'win' : 'lose');
+      this.homePlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'lose' : 'win');
+      this.awayPlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'win' : 'lose');
       this.matchService.createMatch(match); // DB 저장
     }
     this.stopGameLoop()
@@ -191,9 +189,9 @@ export class GameSession {
     this.broadcastScores();
     if (this.scores[playerType] >= 3) {
       const result = playerType === 'home' ? 'win' : 'lose';
-      this.homePlayer.socket.emit('game-result', result);
+      this.homePlayer.socket.emit('res::game::result', result);
       this.awayPlayer.socket.emit(
-        'game-result',
+        'res::game::result',
         result === 'win' ? 'lose' : 'win',
       );
       this.isGameOn = false;
@@ -246,23 +244,23 @@ export class GameSession {
   }
 
   broadcastBallPosition(ballPosition: { x: number; y: number }) {
-    this.homePlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
-    this.awayPlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
+    this.homePlayer.socket.to(this.roomName).emit('res::ball::pos', ballPosition);
+    this.awayPlayer.socket.to(this.roomName).emit('res::ball::pos', ballPosition);
   }
 
   broadcastPlayerPosition() {
-    this.homePlayer.socket.to(this.roomName).emit('playerPosition', [
+    this.homePlayer.socket.to(this.roomName).emit('res::player::pos', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
-    this.awayPlayer.socket.to(this.roomName).emit('playerPosition', [
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::pos', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
   }
 
   broadcastScores() {
-    this.homePlayer.socket.to(this.roomName).emit('scores', this.scores);
-    this.awayPlayer.socket.to(this.roomName).emit('scores', this.scores);
+    this.homePlayer.socket.to(this.roomName).emit('res::player::score', this.scores);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::score', this.scores);
   }
 }
