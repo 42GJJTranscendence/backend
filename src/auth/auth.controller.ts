@@ -76,6 +76,7 @@ export class AuthController {
         const cookieOptions = {
             httpOnly: true,
             maxAge: 36000,
+            sameSite: 'None',
         };
         
         res.cookie('access_token', jwtAccessToken, cookieOptions);
