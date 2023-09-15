@@ -13,7 +13,7 @@ export class Channel
   @Column()
   title: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
   @Column({ type: 'enum', enum: ChannelType })
