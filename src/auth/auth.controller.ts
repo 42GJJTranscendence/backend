@@ -27,6 +27,7 @@ export class AuthController {
 
   @Get('/42/callback')
   async AuthRedirect(@Query('code') code: string, @Res() res) {
+    console.log('/42/callback');
     const fortyTwoToken = await this.authService.authenticate(code, res);
     console.log(`${process.env.FRONT_SIGN_IN_URL}?token=${fortyTwoToken}`);
     res.redirect(`${process.env.FRONT_SIGN_IN_URL}?token=${fortyTwoToken}`);
