@@ -59,7 +59,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinChannel')
-  handleJoinChannel(client: Socket, payload: any) : Promise<string> {
+  handleJoinChannel(client: Socket, payload: any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
     if (!this.rooms.has(channelId))
@@ -70,15 +70,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(channelId).emit('userJoin', userInfo, channelId);
 
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
-    return Promise.resolve("HIHI");
   }
 
   @SubscribeMessage('leaveChannel')
-  handleLeaveChannel(client: Socket) {
-    const channelId = (Array.isArray(client.handshake.query.channelId) ? client.handshake.query.channelId[0] : client.handshake.query.channelId).toString();
+  handleLeaveChannel(client: Socket, payload : any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const channelId = payload.channelId;
     
-    client.to(channelId).emit('userLeave', userInfo, channelId);
+    client.to(channelId).emit('userLeave', userInfo, { channelId: channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 
