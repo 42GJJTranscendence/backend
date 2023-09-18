@@ -15,9 +15,7 @@ export class MessageService {
     ) { }
 
     async createMessage(user: User, channel: Channel, content: string) {
-    
-        try{
-            const create = await this.messageRepository.createQueryBuilder()
+        const create = await this.messageRepository.createQueryBuilder()
             .insert()
             .into(Message)
             .values([
@@ -28,21 +26,16 @@ export class MessageService {
                 }
             ])
             .execute();
-        } catch (error) {
-            console.log(error);
-            throw new SendMessageFailException();
-        }
     }
 
-    async findMessageHistory(channelId: number)
-    {
+    async findMessageHistory(channelId: number) {
         const messageHistorys = await this.messageRepository.find({
             where: { channel: { id: channelId } }, // channelId로 필터링
             relations: ['user'],
             order: { createdAt: 'ASC' }, // createdAt 필드를 오래된 순서로 정렬
-          });
-        
-          return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: mh.user.username, content: mh.content, createdAt: mh.createdAt}))
-        
+        });
+
+        return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: mh.user.username, content: mh.content, createdAt: mh.createdAt }))
+
     }
 }

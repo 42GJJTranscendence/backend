@@ -75,10 +75,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('req::room::history')
-  handleMessageHistory(client: Socket, payload: any) {
+  async handleMessageHistory(client: Socket, payload: any) {
     if (this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
-      const messageHistory = this.messageService.findMessageHistory(payload.channelId);
-      client.emit('res::room::history', messageHistory)
+      const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
+      client.emit('res::room::history', messageHistory);
     }
   }
 
@@ -104,13 +104,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(client: Socket, payload: any) {
     const channelId = payload.channelId;
     const message = payload.content;
-
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     client.to(channelId).emit('res::message::receive', userInfo, payload);
 
-    const user: User = await this.userService.findOneByUsername(userInfo.username);
-    const channel: Channel = await this.channelService.findOneById(channelId);
-    this.messageService.createMessage(user, channel, message);
+    try {
+      const user: User = await this.userService.findOneByUsername(userInfo.username);
+      const channel: Channel = await this.channelService.findOneById(channelId);
+      this.messageService.createMessage(user, channel, message);
+    } catch (error) {
+
+    }
 
     console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
   }
