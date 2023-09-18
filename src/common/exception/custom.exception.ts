@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 
 export class UserDuplicatException extends HttpException {
   constructor() {
@@ -6,9 +6,5 @@ export class UserDuplicatException extends HttpException {
   }
 }
 
-export class SendMessageFailException extends HttpException {
-  constructor() {
-    super('Send MessageFail!', HttpStatus.BAD_REQUEST);
-  }
+export class SendMessageFailException { 
 }
-

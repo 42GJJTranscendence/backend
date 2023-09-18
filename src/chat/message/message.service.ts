@@ -4,7 +4,6 @@ import { Message } from "./message.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "src/module/users/entity/user.entity";
 import { Channel } from "../channel/channel.entity";
-import { SendMessageFailException } from "src/common/exception/custom.exception";
 
 @Injectable()
 export class MessageService {
@@ -15,7 +14,8 @@ export class MessageService {
     ) { }
 
     async createMessage(user: User, channel: Channel, content: string) {
-        const create = await this.messageRepository.createQueryBuilder()
+        try {
+            const create = await this.messageRepository.createQueryBuilder()
             .insert()
             .into(Message)
             .values([
@@ -26,6 +26,9 @@ export class MessageService {
                 }
             ])
             .execute();
+        } catch (error) {
+            throw error;
+        }
     }
 
     async findMessageHistory(channelId: number) {

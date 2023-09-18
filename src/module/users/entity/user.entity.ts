@@ -3,6 +3,7 @@ import { ChannelBanned } from 'src/chat/channel_banned/channel_banned.entity';
 import { Message } from 'src/chat/message/message.entity';
 import { UserChannel } from 'src/chat/user_channel/user_channel.entity';
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Friend } from './friend.entity';
 
 @Entity('Users')
 export class User {
@@ -32,4 +33,10 @@ export class User {
 
   @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.user)
   bannedChannel: ChannelBanned[];
+
+  @OneToMany(() => Friend, (friend) => friend.user)
+  friends : Friend[];
+
+  @OneToMany(() => Friend, (friend) => friend.followedUser)
+  followedBy : Friend[];
 }

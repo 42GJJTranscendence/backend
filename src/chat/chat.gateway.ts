@@ -14,6 +14,7 @@ import { ChannelService } from './channel/channel.service';
 import { User } from 'src/module/users/entity/user.entity';
 import { Channel } from './channel/channel.entity';
 import { UserChannelService } from './user_channel/user_channel.service';
+import { UserDto } from 'src/module/users/dto/user.dto';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -47,8 +48,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log(error.response);
       client.disconnect();
     }
-    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
-    this.server.emit('connection', allUserInfo);
   }
 
   handleDisconnect(client: Socket) {
@@ -58,6 +57,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : User leave room ", client.data.rooms);
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
+  }
+
+  @SubscribeMessage('req::user::list')
+  async handleUserList(client: Socket) {
+    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
+    const userFriends = (await this.userService.findOneByUsername(client.data.user.username)).friends;
+    const FriendUserInfo = Array.from(userFriends).map((uf) => UserDto.from(uf.followedUser));
+    
+    client.emit('res::user::list', allUserInfo);
   }
 
   @SubscribeMessage('req::room::join')
@@ -105,21 +113,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const channelId = payload.channelId;
     const message = payload.content;
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    client.to(channelId).emit('res::message::receive', userInfo, payload);
 
     try {
-      if (channelId != null && message != null)
-      {
-        const user: User = await this.userService.findOneByUsername(userInfo.username);
-        const channel: Channel = await this.channelService.findOneById(channelId);
-        this.messageService.createMessage(user, channel, message);
-      }
-      else
-      {
-        console.log("에러!");
-      }
+      const user: User = await this.userService.findOneByUsername(userInfo.username);
+      const channel: Channel = await this.channelService.findOneById(channelId);
+      await this.messageService.createMessage(user, channel, message);
+      client.to(channelId).emit('res::message::receive', userInfo, payload);
     } catch (error) {
       console.log(error);
+      client.emit('res::error', 'send message create fail!');
     }
 
     console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
