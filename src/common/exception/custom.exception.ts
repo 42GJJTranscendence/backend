@@ -11,3 +11,4 @@ export class SendMessageFailException extends HttpException {
     super('Send MessageFail!', HttpStatus.BAD_REQUEST);
   }
 }
+

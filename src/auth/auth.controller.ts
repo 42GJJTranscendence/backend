@@ -74,10 +74,8 @@ export class AuthController {
 
         const jwtAccessToken =  await this.authService.check2FACode(username, code);
         const cookieOptions = {
-            domain: '43.201.252.111',
             httpOnly: true,
             maxAge: 36000,
-            sameSite: 'None',
         };
         
         res.cookie('access_token', jwtAccessToken, cookieOptions);
