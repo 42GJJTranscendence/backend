@@ -63,13 +63,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleUserList(client: Socket) {
     const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
     const userFriends = (await this.userService.findOneByUsername(client.data.user.username)).friends;
-    const FriendUserInfo = Array.from(userFriends).map((uf) => UserDto.from(uf.followedUser));
-    
+    const follow = Array.from(userFriends).map((uf) => {
+      const userDto = UserDto.from(uf.followedUser);
+      
+      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser))
+        userDto.isConnected = true;
+      else
+        userDto.isConnected = false;
+      return userDto;
+    });
+
+    const follower = 
     client.emit('res::user::list', allUserInfo);
   }
 
   @SubscribeMessage('req::room::join')
   handleJoinChannel(client: Socket, payload: any) {
+    console.log('DIDIDIDIDIDIDI : ', client.data.user.username, ' JOIN=> ', payload.channelId);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
     if (!this.rooms.has(channelId))

@@ -7,11 +7,11 @@ export class UserChannel {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @JoinColumn({ name: 'channelId' })
+    @JoinColumn({ name: 'userId' })
     @ManyToOne(() => User, (user) => user.userChannel)
     user: User;
     
-    @JoinColumn({ name: 'userId' })
+    @JoinColumn({ name: 'channelId' })
     @ManyToOne(() => Channel, (channel) => channel.userChannel)
     channel: Channel;
 
