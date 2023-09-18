@@ -108,11 +108,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(channelId).emit('res::message::receive', userInfo, payload);
 
     try {
-      const user: User = await this.userService.findOneByUsername(userInfo.username);
-      const channel: Channel = await this.channelService.findOneById(channelId);
-      this.messageService.createMessage(user, channel, message);
+      if (channelId != null && message != null)
+      {
+        const user: User = await this.userService.findOneByUsername(userInfo.username);
+        const channel: Channel = await this.channelService.findOneById(channelId);
+        this.messageService.createMessage(user, channel, message);
+      }
+      else
+      {
+        console.log("에러!");
+      }
     } catch (error) {
-
+      console.log(error);
     }
 
     console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
