@@ -16,6 +16,7 @@ import { Channel } from './channel/channel.entity';
 import { UserChannelService } from './user_channel/user_channel.service';
 import { UserDto } from 'src/module/users/dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -147,7 +148,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
   }
 
-  @SubscribeMessage('req::user::follow')
+  @SubscribeMessage('req::game::invite')
+  async handleInviteGame(client: Socket, payload: any) {
+    const awayUserName = payload.username;
+    const awaySocket = this.findSocketByUsername(awayUserName);
+
+    if (awaySocket)
+    {
+      awaySocket.emit('res::game::invite', { homeName: client.data.user.username, awayName: awayUserName });
+      Logger.log("[Chat - Invite Game] Home User Name " + client.data.user.username);
+      Logger.log("[Chat - Invite Game] Away User Name " + awayUserName);
+    }
+    else
+    {
+       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+    }
+  }
+
+  @SubscribeMessage('req::game::approve')
+  async handleApproveGame(client: Socket, payload: any) {
+    const homeUserName = payload.username;
+    const homeSocket = this.findSocketByUsername(homeUserName);
+
+    if (homeSocket)
+    {
+      homeSocket.emit('res::game::approve', { homeName: homeUserName, awayName: client.data.user.username });
+      Logger.log("[Chat - Approve Game] Home User Name " + homeSocket);
+      Logger.log("[Chat - Approve Game] Away User Name " + client.data.user.username);
+    }
+    else
+    {
+       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+    }
+  }
+
+  @SubscribeMessage('req::game::reject')
+  async handleRejectGame(client: Socket, payload: any) {
+    const homeUserName = payload.username;
+    const homeSocket = this.findSocketByUsername(homeUserName);
+
+    if (homeSocket)
+    {
+      homeSocket.emit('res::game::reject', { homeName: homeUserName, awayName: client.data.user.username });
+      Logger.log("[Chat - Reject Game] Home User Name " + homeSocket);
+      Logger.log("[Chat - Reject Game] Away User Name " + client.data.user.username);
+    }
+    else
+    {
+       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+    }
+  }
+
+  private findSocketByUsername(username: string): Socket | null {
+    for (let socket of this.clients) {
+        if (socket.data && socket.data.user && socket.data.user.username === username) {
+            return socket;
+        }
+    }
+    return null;
+
+    @SubscribeMessage('req::user::follow')
   async handleUserFollow(client: Socket, payload: any) {
 
   }
