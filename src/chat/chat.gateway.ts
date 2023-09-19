@@ -16,6 +16,7 @@ import { Channel } from './channel/channel.entity';
 import { UserChannelService } from './user_channel/user_channel.service';
 import { UserDto } from 'src/module/users/dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { FriendService } from 'src/module/users/friend/friend.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -26,7 +27,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly userService: UserService,
     private readonly channelService: ChannelService,
     private readonly userChannelService: UserChannelService,
-    private readonly messageService: MessageService) { }
+    private readonly messageService: MessageService,
+    private readonly friendService: FriendService) { }
 
   @WebSocketServer()
   server: Server;
@@ -71,20 +73,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .filter((userInfo) => userInfo.username !== client.data.user.username);
     const user = (await this.userService.findOneByUsername(client.data.user.username));
 
-    const userFriends = user.friends;
-    const following = Array.from(userFriends).map((uf) => {
+    const followingFriends = await this.friendService.findFollowingFriendsByUser(user);
+    const following = Array.from(followingFriends).map((uf) => {
       const userDto = UserDto.from(uf.followedUser);
 
-      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser)) {
-        allUserInfo
+      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser.username)) {
         userDto.isConnected = true;
       }
-      else
+      else {
         userDto.isConnected = false;
+      }
       return userDto;
     });
 
-    const follower = Array.from(user.followedBy).map((uf) => UserDto.from(uf.user));
+    const followerFriends = await this.friendService.findFollowerFriendsByUser(user);
+    const follower = Array.from(followerFriends).map((uf) => UserDto.from(uf.user));
 
     client.emit('res::user::list', { following: following, follower: follower, publicUsers: allUserInfo });
   }
@@ -98,12 +101,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
       if (channel.type == 'PRIVATE'
-        && ( payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password))))
-        {
-          client.emit('res::error', 'join channel fail!');
-          console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
-          return ;
-        }
+        && (payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password)))) {
+        client.emit('res::error', 'join channel fail!');
+        console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
+        return;
+      }
       await this.userChannelService.addUser(channel, user);
     }
 
@@ -138,7 +140,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user: User = await this.userService.findOneByUsername(userInfo.username);
       const channel: Channel = await this.channelService.findOneById(channelId);
       await this.messageService.createMessage(user, channel, message);
-      client.to(channelId).emit('res::message::receive', { from : userInfo, message : payload });
+      client.to(channelId).emit('res::message::receive', { from: userInfo, message: payload });
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'send message create fail!');
@@ -149,30 +151,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::follow')
   async handleUserFollow(client: Socket, payload: any) {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const targetUserName = payload.targetUsername;
 
+    try {
+      const user = await this.userService.findOneByUsername(userInfo.username);
+      const targetUser = await this.userService.findOneByUsername(targetUserName);
+
+      if (await this.friendService.isFollowUser(user, targetUser)) {
+        client.emit('res::user::follow', 'Already followed!');
+        return;
+      }
+      else if (targetUserName === userInfo.username) {
+        client.emit('res::user::follow', 'You can\'t follow yourself!');
+        return;
+      }
+      await this.friendService.followUser(user, targetUser);
+
+      client.emit('res::user::follow', 'Follow success!')
+    } catch (error) {
+      client.emit('res::error', "Follow fail!");
+    }
   }
 
 
   /* Methods */
 
-  joinRoom(client: Socket, channelId: string)
-  {
+  joinRoom(client: Socket, channelId: string) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
     if (!this.rooms.has(channelId))
       this.rooms.set(channelId, new Set());
     client.join(channelId);
     client.data.rooms.add(channelId);
-    client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
+    client.to(channelId).emit('res::room::join', { userInfo: userInfo, joinTo: channelId });
 
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
 
-  leaveRoom(client: Socket, channelId: string)
-  {
+  leaveRoom(client: Socket, channelId: string) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
-    client.to(channelId).emit('res::room::leave', { userInfo : userInfo, from : channelId });
+    client.to(channelId).emit('res::room::leave', { userInfo: userInfo, from: channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 

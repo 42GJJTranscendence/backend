@@ -4,6 +4,7 @@ import { User } from "./entity/user.entity";
 import { UserService } from "./service/user.service";
 import { UserController } from "./controller/user.controller";
 import { PassportModule } from "@nestjs/passport";
+import { FriendMoudle } from "./friend/friend.module";
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]), User,
