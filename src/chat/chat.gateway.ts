@@ -91,12 +91,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const channel = await this.channelService.findOneById(channelId);
     const user = await this.userService.findOneByUsername(client.data.user.username);
 
-    console.log('IS USER JOINED: ', !(await this.userChannelService.isUserJoinedChannel(user.id, channel.id)));
     if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
-      console.log('User NOT JOINED CHANNEL');
       if (channel.type == 'PRIVATE'
-        && ( payload.password == null || !(await bcrypt.compare(payload.password, channel.password))))
+        && ( payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password))))
+        {
           client.emit('res::error', 'join channel fail!');
+          console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
+          return ;
+        }
       await this.userChannelService.addUser(channel, user);
     }
 

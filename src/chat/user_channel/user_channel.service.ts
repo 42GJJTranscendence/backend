@@ -50,7 +50,7 @@ export class UserChannelService {
   }
 
   async isUserJoinedChannel(userId: number, channelId: number): Promise<Boolean> {
-    const userChannel = await this.userChannelRepository.find({
+    const userChannel = await this.userChannelRepository.findOne({
       where: {
         user: { id : userId},
         channel: { id : channelId }
