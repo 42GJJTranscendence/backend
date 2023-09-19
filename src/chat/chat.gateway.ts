@@ -56,7 +56,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
+
+    client.data.rooms.forEach((roomName) => {
+      this.leaveRoom(client, roomName);
+    });
     console.log("Chat-Socket : User leave room ", client.data.rooms);
+
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
   }
@@ -92,22 +97,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const channel = await this.channelService.findOneById(channelId);
     const user = await this.userService.findOneByUsername(client.data.user.username);
 
-    console.log('IS USER JOINED: ', !(await this.userChannelService.isUserJoinedChannel(user.id, channel.id)));
     if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
-      console.log('User NOT JOINED CHANNEL');
       if (channel.type == 'PRIVATE'
-        && ( payload.password == null || !(await bcrypt.compare(payload.password, channel.password))))
+        && ( payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password))))
+        {
           client.emit('res::error', 'join channel fail!');
+          console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
+          return ;
+        }
       await this.userChannelService.addUser(channel, user);
     }
 
-    if (!this.rooms.has(channelId))
-      this.rooms.set(channelId, new Set());
-    client.join(channelId);
-    client.data.rooms.add(channelId);
-    client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
+    client.data.rooms.forEach((roomName) => {
+      this.leaveRoom(client, roomName);
+    });
+    client.data.rooms = new Set();
 
-    console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
+    this.joinRoom(client, channelId);
   }
 
   @SubscribeMessage('req::room::history')
@@ -120,20 +126,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::room::leave')
   handleLeaveChannel(client: Socket, payload: any) {
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    const channelId = payload.channelId;
-
-    client.to(channelId).emit('res::room::leave', { userInfo : userInfo, from : channelId });
-    client.leave(channelId);
-    client.data.rooms.delete(channelId);
-
-    if (this.rooms.has(channelId)) {
-      this.rooms.get(channelId).delete(client);
-      if (this.rooms.get(channelId).size == 0)
-        this.rooms.delete(channelId);
-    }
-
-    console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
+    this.leaveRoom(client, payload.channelId);
   }
 
   @SubscribeMessage('req::message::send')
@@ -213,5 +206,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
     return null;
+
+    @SubscribeMessage('req::user::follow')
+  async handleUserFollow(client: Socket, payload: any) {
+
+  }
+
+
+  /* Methods */
+
+  joinRoom(client: Socket, channelId: string)
+  {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+
+    if (!this.rooms.has(channelId))
+      this.rooms.set(channelId, new Set());
+    client.join(channelId);
+    client.data.rooms.add(channelId);
+    client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
+
+    console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
+  }
+
+  leaveRoom(client: Socket, channelId: string)
+  {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+
+    client.to(channelId).emit('res::room::leave', { userInfo : userInfo, from : channelId });
+    client.leave(channelId);
+    client.data.rooms.delete(channelId);
+
+    if (this.rooms.has(channelId)) {
+      this.rooms.get(channelId).delete(client);
+      if (this.rooms.get(channelId).size == 0)
+        this.rooms.delete(channelId);
+    }
+    console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
   }
 }
