@@ -1,5 +1,10 @@
-import { Get, Controller, Param, Query } from "@nestjs/common";
+import { Get, Controller, Param, Query, UseGuards } from "@nestjs/common";
 import { UserService } from "../service/user.service";
+import { AuthGuard } from "@nestjs/passport";
+import { GetUser } from "src/auth/scurity/get-user.decorator";
+import { User } from "../entity/user.entity";
+import { UserDto } from "../dto/user.dto";
+import { ApiBearerAuth } from "@nestjs/swagger";
 
 @Controller('users')
 export class UserController {
@@ -7,6 +12,17 @@ export class UserController {
     constructor (
         private userService : UserService,
     ){}
+
+    @Get('detail/my')
+    @UseGuards(AuthGuard())
+    async getUserInfo(@GetUser() user : User) {
+        return UserDto.from(user);
+    }
+
+    @Get('detail/:username')
+    async getTargetUserInfo(@Param('username') username : string) {
+        return UserDto.from(await this.userService.findOneByUsername(username));
+    }
 
     @Get('/check/duplication')
     async CheckDuplicationUserName(@Query('username') username : string) {
