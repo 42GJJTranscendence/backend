@@ -6,5 +6,11 @@ export class UserDuplicatException extends HttpException {
   }
 }
 
+export class UserNotFoundException extends HttpException {
+  constructor() {
+    super('User not Found!', HttpStatus.BAD_REQUEST);
+  }
+}
+
 export class SendMessageFailException { 
 }
