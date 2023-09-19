@@ -29,7 +29,8 @@ export class GameSession {
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
     matchService: MatchService,
-    userService: UserService
+    userService: UserService,
+    ballSpeed: number
   ) {
     this.homePlayer = new Player(
       { x: this.height / 2 - this.paddleLength / 2, y: 0 },
@@ -46,6 +47,7 @@ export class GameSession {
     homeSocket.join(this.roomName);
     awaySocket.join(this.roomName);
 
+    this.ball.setBallSpeed({speed: ballSpeed});
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;

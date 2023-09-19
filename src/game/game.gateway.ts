@@ -44,9 +44,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.gameService.removeClient(client);
   }
 
-  @SubscribeMessage('req::queue::join')
-  async joinQueue(client: Socket, data: any): Promise<void> {
-    this.gameService.addClient(client);
+  @SubscribeMessage('req::normal::join')
+  async joinNormalQueue(client: Socket, data: any): Promise<void> {
+    this.gameService.addNormalClient(client);
+  }
+
+  @SubscribeMessage('req::hard::join')
+  async joinHardQueue(client: Socket, data: any): Promise<void> {
+    this.gameService.addHardClient(client);
   }
 
   @SubscribeMessage('req::user::move')
