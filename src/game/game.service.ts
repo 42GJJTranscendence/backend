@@ -85,7 +85,7 @@ export class GameService {
 		}
 		else if (this.matchingHardQueue.contains(client))
 		{
-			this.matchingNormalQueue.remove(client);
+			this.matchingHardQueue.remove(client);
 		}
         this.endSessionForClient(client);
     }
