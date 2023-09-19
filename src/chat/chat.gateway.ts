@@ -61,25 +61,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::list')
   async handleUserList(client: Socket) {
-    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }));
-    const userFriends = (await this.userService.findOneByUsername(client.data.user.username)).friends;
-    const follow = Array.from(userFriends).map((uf) => {
+    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
+      .filter((userInfo) => userInfo.username !== client.data.user.username);
+    const user = (await this.userService.findOneByUsername(client.data.user.username));
+
+    const userFriends = user.friends;
+    const following = Array.from(userFriends).map((uf) => {
       const userDto = UserDto.from(uf.followedUser);
-      
-      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser))
+
+      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser)) {
+        allUserInfo
         userDto.isConnected = true;
+      }
       else
         userDto.isConnected = false;
       return userDto;
     });
 
-    const follower = 
-    client.emit('res::user::list', allUserInfo);
+    const follower = Array.from(user.followedBy).map((uf) => UserDto.from(uf.user));
+
+    client.emit('res::user::list', { following: following, follower: follower, publicUsers: allUserInfo });
   }
 
   @SubscribeMessage('req::room::join')
   handleJoinChannel(client: Socket, payload: any) {
-    console.log('DIDIDIDIDIDIDI : ', client.data.user.username, ' JOIN=> ', payload.channelId);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
     if (!this.rooms.has(channelId))
@@ -87,7 +92,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.join(channelId);
     client.data.rooms.add(channelId);
-    client.to(channelId).emit('res::room::join', userInfo, channelId);
+    client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
 
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
@@ -105,7 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
 
-    client.to(channelId).emit('res::room::leave', userInfo, { channelId: channelId });
+    client.to(channelId).emit('res::room::leave', { userInfo : userInfo, from : channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 
@@ -128,7 +133,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user: User = await this.userService.findOneByUsername(userInfo.username);
       const channel: Channel = await this.channelService.findOneById(channelId);
       await this.messageService.createMessage(user, channel, message);
-      client.to(channelId).emit('res::message::receive', userInfo, payload);
+      client.to(channelId).emit('res::message::receive', { from : userInfo, message : payload });
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'send message create fail!');

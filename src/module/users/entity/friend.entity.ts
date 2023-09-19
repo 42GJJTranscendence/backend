@@ -6,13 +6,9 @@ export class Friend {
     @PrimaryGeneratedColumn()
       id: number;
 
-    @ManyToOne(() => User, (user) => user.friends, {
-      eager: true
-    })
+    @ManyToOne(() => User, (user) => user.friends)
       user: User;
 
-    @ManyToOne(() => User, (user) => user.followedBy, {
-      eager: true
-    })
+    @ManyToOne(() => User, (user) => user.followedBy)
       followedUser: User;
 }
