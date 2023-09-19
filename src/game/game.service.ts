@@ -3,14 +3,17 @@ import { GameSession } from './gameSession.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { MatchService } from './match/match.service';
+import { UserService } from 'src/module/users/service/user.service';
 
 @Injectable()
 export class GameService {
-	private matchingQueue: Queue<Socket> = new Queue();
+	private matchingNormalQueue: Queue<Socket> = new Queue();
+	private matchingHardQueue: Queue<Socket> = new Queue();
     private gameSessions: GameSession[] = [];
 
 	constructor(
-		private readonly matchService: MatchService
+		private readonly matchService: MatchService,
+		private readonly userService: UserService
 	  ) {}
 	
 	// disconnect 될 때
@@ -28,32 +31,62 @@ export class GameService {
         this.gameSessions = this.gameSessions.filter(s => s !== session);
     }
 
-	private tryMatchClients() {
-		if (this.matchingQueue.size() >= 2) {
-			const homePlayerSocket = this.matchingQueue.dequeue();
-			const awayPlayerSocket = this.matchingQueue.dequeue();
-
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService);
-			this.gameSessions.push(gameSession);
-		}
-	}
-  
-	addClient(client: Socket)
+	addNormalClient(client: Socket)
 	{
 		Logger.log("[Game] addClient -> client socket id : " + client.id)
-		Logger.log("queue size : " + this.matchingQueue.size())
-		if (this.matchingQueue.contains(client))
+		Logger.log("[Game] queue size : " + this.matchingNormalQueue.size())
+		if (this.matchingNormalQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
-		this.matchingQueue.enqueue(client);
-		this.tryMatchClients();
+		this.matchingNormalQueue.enqueue(client);
+		this.tryMatchNormalClients();
+	}
+
+	private tryMatchNormalClients() {
+		if (this.matchingNormalQueue.size() >= 2) {
+			const homePlayerSocket = this.matchingNormalQueue.dequeue();
+			const awayPlayerSocket = this.matchingNormalQueue.dequeue();
+
+			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 10);
+			this.gameSessions.push(gameSession);
+		}
+	}
+	
+	addHardClient(client: Socket)
+	{
+		Logger.log("[Game] addClient -> client socket id : " + client.id)
+		Logger.log("[Game] queue size : " + this.matchingHardQueue.size())
+		if (this.matchingHardQueue.contains(client))
+		{
+			client.emit('error', { message: 'You are already in the queue!' });
+			return;
+		}
+		this.matchingHardQueue.enqueue(client);
+		this.tryMatchHardClients();
+	}
+
+	private tryMatchHardClients() {
+		if (this.matchingHardQueue.size() >= 2) {
+			const homePlayerSocket = this.matchingHardQueue.dequeue();
+			const awayPlayerSocket = this.matchingHardQueue.dequeue();
+
+			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 20);
+			this.gameSessions.push(gameSession);
+		}
 	}
 
     removeClient(client: Socket) 
 	{
-        this.matchingQueue.remove(client);
+		if (this.matchingNormalQueue.contains(client))
+		{
+			this.matchingNormalQueue.remove(client);
+		}
+		else if (this.matchingHardQueue.contains(client))
+		{
+			this.matchingHardQueue.remove(client);
+		}
         this.endSessionForClient(client);
     }
 	
