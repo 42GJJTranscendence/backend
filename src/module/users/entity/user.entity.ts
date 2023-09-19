@@ -34,9 +34,9 @@ export class User {
   @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.user)
   bannedChannel: ChannelBanned[];
 
-  @OneToMany(() => Friend, (friend) => friend.user)
+  @OneToMany(() => Friend, (friend) => friend.user, { eager: true })
   friends : Friend[];
 
-  @OneToMany(() => Friend, (friend) => friend.followedUser)
+  @OneToMany(() => Friend, (friend) => friend.followedUser, { eager: true })
   followedBy : Friend[];
 }
