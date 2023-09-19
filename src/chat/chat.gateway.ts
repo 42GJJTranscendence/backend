@@ -15,6 +15,7 @@ import { User } from 'src/module/users/entity/user.entity';
 import { Channel } from './channel/channel.entity';
 import { UserChannelService } from './user_channel/user_channel.service';
 import { UserDto } from 'src/module/users/dto/user.dto';
+import * as bcrypt from 'bcrypt';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -84,15 +85,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('req::room::join')
-  handleJoinChannel(client: Socket, payload: any) {
+  async handleJoinChannel(client: Socket, payload: any) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     const channelId = payload.channelId;
+    const channel = await this.channelService.findOneById(channelId);
+    const user = await this.userService.findOneByUsername(client.data.user.id);
+
+    if (!this.userChannelService.isUserJoinedChannel(userInfo.id, channel.id)) {
+      if (channel.type == 'PRIVATE'
+        && ( payload.password == null || !(await bcrypt.compare(payload.password, channel.password))))
+          client.emit('res::error', 'join channel fail!');
+      await this.userChannelService.addUser(channel, user);
+    }
+
     if (!this.rooms.has(channelId))
       this.rooms.set(channelId, new Set());
-
     client.join(channelId);
     client.data.rooms.add(channelId);
     client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
+
 
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
