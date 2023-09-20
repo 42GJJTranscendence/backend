@@ -143,7 +143,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (channel == null) {
         channel = await this. channelService.createDirectChannelForUser(user, targetUser);
       }
-      this.joinRoom(client, channel.id.toString());
+      // this.joinRoom(client, channel.id.toString());
       client.emit('res::room::dm', { joinedTo : channel.id});
     } catch (error) {
       console.log(error);
