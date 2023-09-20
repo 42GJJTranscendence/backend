@@ -220,7 +220,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (homeSocket)
     {
       homeSocket.emit('res::game::approve', { homeName: homeUserName, awayName: client.data.user.username });
-      Logger.log("[Chat - Approve Game] Home User Name " + homeSocket);
+      Logger.log("[Chat - Approve Game] Home User Name " + homeUserName);
       Logger.log("[Chat - Approve Game] Away User Name " + client.data.user.username);
     }
     else
@@ -237,7 +237,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (homeSocket)
     {
       homeSocket.emit('res::game::reject', { homeName: homeUserName, awayName: client.data.user.username });
-      Logger.log("[Chat - Reject Game] Home User Name " + homeSocket);
+      Logger.log("[Chat - Reject Game] Home User Name " + homeUserName);
       Logger.log("[Chat - Reject Game] Away User Name " + client.data.user.username);
     }
     else
