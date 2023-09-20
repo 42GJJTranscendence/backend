@@ -130,6 +130,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.leaveRoom(client, payload.channelId);
   }
 
+  @SubscribeMessage('req::room::dm')
+  async handleGetDMChannel(client: Socket, payload: any) {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const targetUsername = payload.targetUsername;
+
+    try {
+      const user = await this.userService.findOneByUsername(userInfo.username);
+      const targetUser= await this.userService.findOneByUsername(targetUsername);
+      let channel = await this.channelService.findDirectChannelForUser(user.id, targetUser.id);
+      if (channel == null) {
+        channel = await this. channelService.createDirectChannelForUser(user, targetUser);
+      }
+      this.joinRoom(client, channel.id.toString());
+      client.emit('res::room::dm', { joinedTo : channel.id});
+    } catch (error) {
+      console.log(error);
+      client.emit('res::room::dm', 'Can\'t find dmChannel or create dmChannle');
+    }
+  }
+
   @SubscribeMessage('req::message::send')
   async handleSendMessage(client: Socket, payload: any) {
     const channelId = payload.channelId;
@@ -173,6 +193,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('res::error', "Follow fail!");
     }
   }
+
+
 
 
   /* Methods */
