@@ -6,6 +6,7 @@ import { createChannelRequestDto } from "./channel.dto";
 import * as bcrypt from 'bcrypt';
 import { User } from "src/module/users/entity/user.entity";
 import { UserChannelService } from "../user_channel/user_channel.service";
+import { ChannelType } from "src/common/enums";
 
 @Injectable()
 export class ChannelService {
@@ -32,18 +33,52 @@ export class ChannelService {
         return channels;
     }
 
+    async findDirectChannelForUser(user1Id: number, user2Id: number) : Promise<Channel | null>{
+        let channel = await this.channelRepository
+            .createQueryBuilder( 'channel')
+            .innerJoinAndSelect('channel.userChannel', 'userChannel')
+            .innerJoin('userChannel.user', 'user')
+            .where('channel.type = :type', { type: 'DIRECT' })
+            .andWhere('user.id IN (:user1Id, :user2Id)', { user1Id, user2Id })
+            .groupBy('channel.id, userChannel.id')
+            .getMany();
+        // console.log(channel.getQuery())
+        // console.log('FINDING USER : ', user1Id, ' ', user2Id);
+        // console.log('QUERY OUTPUT : ', channel);
+
+        // channel.forEach ((channel) => console.log(channel.userChannel.length));
+        channel = channel.filter((c) => c.userChannel.length == 2)
+        if (channel.length == 0)
+            return null;
+        else if (channel.length == 1)
+            return channel[0];
+        else
+            throw new Error;
+        // return channel || null;
+    }
+
+    async createDirectChannelForUser(user1 : User, user2: User) : Promise<Channel | null> {
+        const channel = new Channel();
+
+        channel.title = 'DM Chating';
+        channel.type = ChannelType.DIRECT;
+
+        const createdChannel = await this.channelRepository.save(channel);
+        await this.userChannelService.addUser(channel, user1);
+        await this.userChannelService.addUser(channel, user2);
+        return createdChannel;
+    }
+
     async createChannel(createChannelDto: createChannelRequestDto, user: User): Promise<Channel | undefined> {
         const channel = new Channel();
 
         channel.title = createChannelDto.title;
 
-        if (createChannelDto.password != null)
-        {
+        if (createChannelDto.password != null) {
             const saltRounds = 10;
             channel.password = await bcrypt.hash(createChannelDto.password, saltRounds);
         }
         channel.type = createChannelDto.type;
-        channel.userChannel;
 
         const createdChannel = await this.channelRepository.save(channel);
         await this.userChannelService.addAdminUser(channel, user);
