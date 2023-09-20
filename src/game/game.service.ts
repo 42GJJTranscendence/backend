@@ -7,8 +7,9 @@ import { UserService } from 'src/module/users/service/user.service';
 
 @Injectable()
 export class GameService {
-	private matchingNormalQueue: Queue<Socket> = new Queue();
-	private matchingHardQueue: Queue<Socket> = new Queue();
+	private normalQueue: Queue<Socket> = new Queue();
+	private hardQueue: Queue<Socket> = new Queue();
+	private inviteSockets: Map<string, Socket> = new Map();
     private gameSessions: GameSession[] = [];
 
 	constructor(
@@ -31,23 +32,53 @@ export class GameService {
         this.gameSessions = this.gameSessions.filter(s => s !== session);
     }
 
+	addInvite(client: Socket, data: any)
+	{
+		if (data.myPos == "home")
+		{
+			if (!this.inviteSockets[data.awayName])
+			{
+				this.inviteSockets[data.homeName] = client;
+			}
+			else
+			{
+				const gameSession = new GameSession(client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
+				this.gameSessions.push(gameSession);
+			}
+		}
+		else
+		{
+			if (!this.inviteSockets[data.homeName])
+			{
+				this.inviteSockets[data.awayName] = client;
+			}
+			else
+			{
+				const gameSession = new GameSession(this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
+				this.gameSessions.push(gameSession);
+			}
+		}
+		this.inviteSockets.delete(data.homeName);
+		this.inviteSockets.delete(data.awayName);
+	}
+
 	addNormalClient(client: Socket)
 	{
 		Logger.log("[Game] addClient -> client socket id : " + client.id)
-		Logger.log("[Game] queue size : " + this.matchingNormalQueue.size())
-		if (this.matchingNormalQueue.contains(client))
+		Logger.log("[Game] queue size : " + this.normalQueue.size())
+		if (this.normalQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
-		this.matchingNormalQueue.enqueue(client);
+		this.normalQueue.enqueue(client);
 		this.tryMatchNormalClients();
 	}
 
 	private tryMatchNormalClients() {
-		if (this.matchingNormalQueue.size() >= 2) {
-			const homePlayerSocket = this.matchingNormalQueue.dequeue();
-			const awayPlayerSocket = this.matchingNormalQueue.dequeue();
+		if (this.normalQueue.size() >= 2) {
+			const homePlayerSocket = this.normalQueue.dequeue();
+			const awayPlayerSocket = this.normalQueue.dequeue();
 
 			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 10);
 			this.gameSessions.push(gameSession);
@@ -57,20 +88,20 @@ export class GameService {
 	addHardClient(client: Socket)
 	{
 		Logger.log("[Game] addClient -> client socket id : " + client.id)
-		Logger.log("[Game] queue size : " + this.matchingHardQueue.size())
-		if (this.matchingHardQueue.contains(client))
+		Logger.log("[Game] queue size : " + this.hardQueue.size())
+		if (this.hardQueue.contains(client))
 		{
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
-		this.matchingHardQueue.enqueue(client);
+		this.hardQueue.enqueue(client);
 		this.tryMatchHardClients();
 	}
 
 	private tryMatchHardClients() {
-		if (this.matchingHardQueue.size() >= 2) {
-			const homePlayerSocket = this.matchingHardQueue.dequeue();
-			const awayPlayerSocket = this.matchingHardQueue.dequeue();
+		if (this.hardQueue.size() >= 2) {
+			const homePlayerSocket = this.hardQueue.dequeue();
+			const awayPlayerSocket = this.hardQueue.dequeue();
 
 			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 20);
 			this.gameSessions.push(gameSession);
@@ -79,13 +110,13 @@ export class GameService {
 
     removeClient(client: Socket) 
 	{
-		if (this.matchingNormalQueue.contains(client))
+		if (this.normalQueue.contains(client))
 		{
-			this.matchingNormalQueue.remove(client);
+			this.normalQueue.remove(client);
 		}
-		else if (this.matchingHardQueue.contains(client))
+		else if (this.hardQueue.contains(client))
 		{
-			this.matchingHardQueue.remove(client);
+			this.hardQueue.remove(client);
 		}
         this.endSessionForClient(client);
     }
