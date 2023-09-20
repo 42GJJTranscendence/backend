@@ -167,7 +167,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::game::approve')
   async handleApproveGame(client: Socket, payload: any) {
-    const homeUserName = payload.username;
+    const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
     if (homeSocket)
@@ -178,13 +178,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     else
     {
-       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+       Logger.error("[Chat - Approve Game] Can't Find Home User Socket");
     }
   }
 
   @SubscribeMessage('req::game::reject')
   async handleRejectGame(client: Socket, payload: any) {
-    const homeUserName = payload.username;
+    const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
     if (homeSocket)
@@ -195,7 +195,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     else
     {
-       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+       Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
     }
   }
 
@@ -206,15 +206,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
     return null;
+  }
 
-    @SubscribeMessage('req::user::follow')
+  @SubscribeMessage('req::user::follow')
   async handleUserFollow(client: Socket, payload: any) {
 
   }
-
-
+  
   /* Methods */
-
   joinRoom(client: Socket, channelId: string)
   {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
