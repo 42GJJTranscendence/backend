@@ -3,6 +3,8 @@ import { Ball } from './ball.model';
 import { Player } from './player.model';
 import { Match } from './match/match.entity';
 import { MatchService } from './match/match.service';
+import { Logger } from '@nestjs/common';
+import { UserService } from 'src/module/users/service/user.service';
 
 export class GameSession {
   private roomName: string;
@@ -10,6 +12,8 @@ export class GameSession {
   private awayPlayer: Player;
   private moveBall: NodeJS.Timer;
   private scores = { home: 0, away: 0 };
+  private players = { home: "", away: "" };
+  private imgUrl = { home: "", away: "" };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
   private height: number = 960;
@@ -17,12 +21,16 @@ export class GameSession {
   private ballSize: number = 50;
   private ball: Ball = new Ball(this.height / 2, this.width / 2);
   private matchService: MatchService;
+  private userService: UserService;
+  private isGameOn: boolean;
 
   constructor(
     homeSocket: Socket,
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
-    matchService: MatchService
+    matchService: MatchService,
+    userService: UserService,
+    ballSpeed: number
   ) {
     this.homePlayer = new Player(
       { x: this.height / 2 - this.paddleLength / 2, y: 0 },
@@ -34,15 +42,38 @@ export class GameSession {
       this.paddleLength,
       awaySocket,
     );
-    this.roomName = `game-${homeSocket.id}-${awaySocket.id}`;
+    this.roomName = `game-${homeSocket.data.user.username}-${awaySocket.data.user.username}`;
 
     homeSocket.join(this.roomName);
     awaySocket.join(this.roomName);
 
+    this.ball.setBallSpeed({speed: ballSpeed});
     this.startGameLoop();
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;
+    this.userService = userService;
+
+
+    this.players.home = this.homePlayer.socket.data.user.username
+    this.players.away = this.awayPlayer.socket.data.user.username
+    this.initialize();
+
+    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.players);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.players);
   }
+
+  async initialize(): Promise<void> {
+    const homeUser = await this.userService.findOneByUsername(this.players.home);
+    const awayUser = await this.userService.findOneByUsername(this.players.away);
+
+    if (homeUser && awayUser) {
+        this.imgUrl.home = homeUser.imageUrl;
+        this.imgUrl.away = awayUser.imageUrl;
+        this.homePlayer.socket.to(this.roomName).emit('res::player::img',this.imgUrl);
+        this.awayPlayer.socket.to(this.roomName).emit('res::player::img',this.imgUrl);
+    }
+    Logger.log("[GAME] Game Start! ")
+}
 
   includesClient(client: Socket): boolean {
     return (
@@ -52,6 +83,7 @@ export class GameSession {
 
   async startGameLoop() {
     if (!this.ball.status) {
+      this.isGameOn = true;
       this.ball.setBallPostion({
         x: this.height / 2 - this.ballSize / 2,
         y: this.width / 2 - this.ballSize / 2,
@@ -72,9 +104,14 @@ export class GameSession {
 
   // disconnect 될 때, 먼저 disconnect 된 user가 lose
   disconnectGameLoop(client: Socket) {
+    if (this.isGameOn === true)
+    {
+      const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
+      this.homePlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'lose' : 'win');
+      this.awayPlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'win' : 'lose');
+      this.matchService.createMatch(match); // DB 저장
+    }
     this.stopGameLoop()
-    const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
-    this.matchService.createMatch(match); // DB 저장
   }
 
   stopGameLoop() {
@@ -101,14 +138,14 @@ export class GameSession {
       }
     } else if (this.ball.position.y > this.width - this.ballSize) {
       if (this.isBallCollidingWithPaddle(this.awayPlayer)) {
-        console.log(
-          this.ball.position.x,
-          this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
-        );
-        console.log(
-          this.ball.position.x -
-            (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
-        );
+        // console.log(
+        //   this.ball.position.x,
+        //   this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2,
+        // );
+        // console.log(
+        //   this.ball.position.x -
+        //     (this.awayPlayer.position.x + this.awayPlayer.paddleLength / 2),
+        // );
         this.ball.direction =
           (Math.PI * 3) / 2 +
           (this.ball.position.x +
@@ -154,12 +191,14 @@ export class GameSession {
     this.broadcastScores();
     if (this.scores[playerType] >= 3) {
       const result = playerType === 'home' ? 'win' : 'lose';
-      this.homePlayer.socket.emit('game-result', result);
+      this.homePlayer.socket.emit('res::game::result', result);
       this.awayPlayer.socket.emit(
-        'game-result',
+        'res::game::result',
         result === 'win' ? 'lose' : 'win',
       );
-      const match = this.makeMatch(playerType); // DB 저장 
+      this.isGameOn = false;
+      const match = this.makeMatch(playerType); // DB 저장
+      Logger.log("[Game] Match Info Home Id " + match.userHomeId.id + " Away Id " + match.userAwayId.id +  " <- is about to save on DB")
       this.matchService.createMatch(match);
       this.onGameEnd(this);
       this.leaveRoom();
@@ -171,9 +210,9 @@ export class GameSession {
   makeMatch(playerType: string): Match {
     const match = new Match();
     match.start_at = new Date();
-    match.user_home = this.homePlayer.socket.data.user;
-    match.user_away = this.awayPlayer.socket.data.user;
-    match.winner = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
+    match.userHomeId = this.homePlayer.socket.data.user;
+    match.userAwayId = this.awayPlayer.socket.data.user;
+    match.winnerId = playerType === 'home' ? this.homePlayer.socket.data.user : this.awayPlayer.socket.data.user
     match.user_home_score = this.scores.home;
     match.user_away_score = this.scores.away;
     return match;
@@ -207,23 +246,23 @@ export class GameSession {
   }
 
   broadcastBallPosition(ballPosition: { x: number; y: number }) {
-    this.homePlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
-    this.awayPlayer.socket.to(this.roomName).emit('ballPosition', ballPosition);
+    this.homePlayer.socket.to(this.roomName).emit('res::ball::pos', ballPosition);
+    this.awayPlayer.socket.to(this.roomName).emit('res::ball::pos', ballPosition);
   }
 
   broadcastPlayerPosition() {
-    this.homePlayer.socket.to(this.roomName).emit('playerPosition', [
+    this.homePlayer.socket.to(this.roomName).emit('res::player::pos', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
-    this.awayPlayer.socket.to(this.roomName).emit('playerPosition', [
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::pos', [
       this.homePlayer.position,
       this.awayPlayer.position,
     ]);
   }
 
   broadcastScores() {
-    this.homePlayer.socket.to(this.roomName).emit('scores', this.scores);
-    this.awayPlayer.socket.to(this.roomName).emit('scores', this.scores);
+    this.homePlayer.socket.to(this.roomName).emit('res::player::score', this.scores);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::score', this.scores);
   }
 }
