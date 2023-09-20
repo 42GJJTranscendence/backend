@@ -217,8 +217,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    Logger.log("payload " + payload);
-
     if (homeSocket)
     {
       homeSocket.emit('res::game::approve', { homeName: homeUserName, awayName: client.data.user.username });
