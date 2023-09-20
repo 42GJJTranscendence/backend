@@ -217,7 +217,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    console.log("payload " + payload);
+    Logger.log("payload " + payload);
 
     if (homeSocket)
     {
