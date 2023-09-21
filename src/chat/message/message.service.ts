@@ -38,7 +38,6 @@ export class MessageService {
             order: { createdAt: 'ASC' }, // createdAt 필드를 오래된 순서로 정렬
         });
 
-        return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: mh.user.username, content: mh.content, createdAt: mh.createdAt }))
-
+        return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: mh.user.username, content: mh.content, createdAt: mh.createdAt, imgUrl: mh.user.imageUrl }))
     }
 }
