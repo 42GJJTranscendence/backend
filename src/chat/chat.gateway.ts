@@ -168,6 +168,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
         if ((await this.userChannelService.setUserOwner(channel,targetUser)) != null) {
           console.log("Chat-Socket : <", client.data.user.username, "> give owner => ", "<", targetUser.username,">");
+          this.findSocketByUsername(targetUser.username).emit('res::room::amiOwner', { channelId: channel.id.toString(), isOwner: true});
         }
         else {
           client.emit('res::error', 'targetUser is not channel member');
@@ -176,6 +177,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'set owner fail');
+    }
+  }
+
+  @SubscribeMessage('req::room::amiOwner')
+  async hanndleAmIOwner(client: Socket, payload: any)
+  {
+    try {
+      const user = await this.userService.findOneByUsername(client.data.user.username);
+      const channel = await this.channelService.findOneById(payload.channelId);
+      const isOwner = await this.userChannelService.isUserOwnerOfChannel(channel.id, user.id);
+      client.emit('res::room::amiOwner', { channelId: channel.id.toString(), isOwner: isOwner});
+    } catch (error) {
+      console.log(error);
+      client.emit('res::error', 'Check Owner fail');
     }
   }
 
