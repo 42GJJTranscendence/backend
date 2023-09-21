@@ -52,8 +52,10 @@ export class ChannelService {
             return null;
         else if (channel.length == 1)
             return channel[0];
-        else
+        else {
+            console.log("CHANNEL_LENGTH : ", channel.length);
             throw new Error;
+        }
         // return channel || null;
     }
 
