@@ -41,25 +41,62 @@ export class UserChannelService {
       .execute();
   }
 
-
-  async findByUser(user: User): Promise<UserChannel[]> {
-    return await this.userChannelRepository.find({
-      where: { user: user }, // user 엔티티와 매핑된 user 필드를 사용하여 조회
-      relations: ['channel'],
-    });
-  }
-
-  async isUserJoinedChannel(userId: number, channelId: number): Promise<Boolean> {
+  async setUserOwner(channel: Channel, user: User) {
     const userChannel = await this.userChannelRepository.findOne({
       where: {
-        user: { id : userId},
-        channel: { id : channelId }
+        user: user,
+        channel: channel,
       },
-    })
+    });
 
-    if (userChannel != null)
-      return true;
-    else
-      return false;
+    if (userChannel) {
+      userChannel.is_owner = true;
+      return await this.userChannelRepository.save(userChannel);
+    }
+    return null;
   }
+  
+  async findByUser(user: User): Promise < UserChannel[] > {
+  return await this.userChannelRepository.find({
+    where: { user: user }, // user 엔티티와 매핑된 user 필드를 사용하여 조회
+    relations: ['channel'],
+  });
+}
+
+  async isUserJoinedChannel(userId: number, channelId: number): Promise < Boolean > {
+  const userChannel = await this.userChannelRepository.findOne({
+    where: {
+      user: { id: userId },
+      channel: { id: channelId }
+    },
+  })
+
+    if(userChannel != null)
+return true;
+    else
+return false;
+  }
+
+  async isUserOwnerOfChannel(channelId: number, userId: number): Promise < Boolean > {
+  const userChannel = await this.userChannelRepository.findOne({
+    where: {
+      user: { id: userId },
+      channel: { id: channelId }
+    },
+  })
+
+    if(userChannel != null && userChannel.is_owner == true)
+return true;
+    else
+return false;
+  }
+
+  async removeUserFromChannel(userId: number, channelId: number) {
+  await this.userChannelRepository
+    .createQueryBuilder()
+    .delete()
+    .where('userId = :userId', { userId })
+    .andWhere('channelId = :channelId', { channelId })
+    .execute();
+}
 }

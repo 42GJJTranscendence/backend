@@ -18,6 +18,8 @@ import { UserDto } from 'src/module/users/dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import { FriendService } from 'src/module/users/friend/friend.service';
 import { Logger } from '@nestjs/common';
+import { ChannelBanned } from './channel_banned/channel_banned.entity';
+import { ChannelBannedService } from './channel_banned/channel_banned.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -28,6 +30,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly userService: UserService,
     private readonly channelService: ChannelService,
     private readonly userChannelService: UserChannelService,
+    private readonly channelBannedService: ChannelBannedService,
     private readonly messageService: MessageService,
     private readonly friendService: FriendService) { }
 
@@ -95,27 +98,78 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::room::join')
   async handleJoinChannel(client: Socket, payload: any) {
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    const channelId = payload.channelId;
-    const channel = await this.channelService.findOneById(channelId);
-    const user = await this.userService.findOneByUsername(client.data.user.username);
+    try {
+      const userInfo = { id: client.data.user.id, username: client.data.user.username };
+      const channelId = payload.channelId;
+      const channel = await this.channelService.findOneById(channelId);
+      const user = await this.userService.findOneByUsername(client.data.user.username);
 
-    if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
-      if (channel.type == 'PRIVATE'
-        && (payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password)))) {
-        client.emit('res::error', 'join channel fail!');
-        console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
-        return;
+      if (await this.channelBannedService.isUserBannedFromChannel(user, channel)) {
+        client.emit('res::error', 'join channel fail! (You are banned from channel)');
       }
-      await this.userChannelService.addUser(channel, user);
+
+      if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
+        if (channel.type == 'PRIVATE'
+          && (payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password)))) {
+          client.emit('res::error', 'join channel fail!');
+          console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
+          return;
+        }
+        await this.userChannelService.addUser(channel, user);
+      }
+
+      client.data.rooms.forEach((roomName) => {
+        this.leaveRoom(client, roomName);
+      });
+      client.data.rooms = new Set();
+
+      this.joinRoom(client, channelId);
+    } catch (error) {
+      console.log(error);
+      client.emit('res::error', 'join channel fail!');
     }
+  }
 
-    client.data.rooms.forEach((roomName) => {
-      this.leaveRoom(client, roomName);
-    });
-    client.data.rooms = new Set();
+  @SubscribeMessage('req::room::ban')
+  async handleBanFromRoom(client: Socket, payload: any) {
+    try {
+      const channel = await this.channelService.findOneById(payload.channelId);
+      const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
 
-    this.joinRoom(client, channelId);
+      if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
+        await this.channelBannedService.addChannelBanUser(channel, targetUser);
+        await this.userChannelService.removeUserFromChannel(targetUser.id, channel.id);
+        const targetClient = this.findClientFromSocket(targetUser.username);
+        this.leaveRoom(targetClient, channel.id.toString());
+        console.log("Chat-Socket : <", targetUser.username, "> banned from =>", channel.id);
+      }
+      else {
+        client.emit('res::error', 'You are not channel host');
+      }
+    } catch (error) {
+      console.log(error);
+      client.emit('res::error', 'Ban User Fail!');
+    }
+  }
+
+  @SubscribeMessage('req::room::setOwner')
+  async hanndleSetOwnner(client: Socket, payload: any) {
+
+    try {
+      const channel = await this.channelService.findOneById(payload.channelId);
+      const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
+      if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
+        if ((await this.userChannelService.setUserOwner(channel,targetUser)) != null) {
+          console.log("Chat-Socket : <", client.data.user.username, "> give owner => ", "<", targetUser.username,">");
+        }
+        else {
+          client.emit('res::error', 'targetUser is not channel member');
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      client.emit('res::error', 'set owner fail');
+    }
   }
 
   @SubscribeMessage('req::room::history')
@@ -138,13 +192,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const user = await this.userService.findOneByUsername(userInfo.username);
-      const targetUser= await this.userService.findOneByUsername(targetUsername);
+      const targetUser = await this.userService.findOneByUsername(targetUsername);
       let channel = await this.channelService.findDirectChannelForUser(user.id, targetUser.id);
       if (channel == null) {
-        channel = await this. channelService.createDirectChannelForUser(user, targetUser);
+        channel = await this.channelService.createDirectChannelForUser(user, targetUser);
       }
-      // this.joinRoom(client, channel.id.toString());
-      client.emit('res::room::dm', { joinedTo : channel.id});
+
+      client.emit('res::room::dm', { joinedTo: channel.id });
     } catch (error) {
       console.log(error);
       client.emit('res::room::dm', 'Can\'t find dmChannel or create dmChannle');
@@ -160,8 +214,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user: User = await this.userService.findOneByUsername(userInfo.username);
       const channel: Channel = await this.channelService.findOneById(channelId);
-      await this.messageService.createMessage(user, channel, message);
-      client.to(channelId).emit('res::message::receive', { from: userInfo, message: payload });
+      if (await this.userChannelService.isUserJoinedChannel(user.id, channel.id)) {
+        await this.messageService.createMessage(user, channel, message);
+        client.to(channelId).emit('res::message::receive', { from: userInfo, message: payload });
+      }
+      else
+        client.emit('res::error', 'Send message Fail! ( You are not channel member )');
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'send message create fail!');
@@ -194,21 +252,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('res::error', "Follow fail!");
     }
   }
-      
+
   @SubscribeMessage('req::game::invite')
   async handleInviteGame(client: Socket, payload: any) {
     const awayUserName = payload.username;
     const awaySocket = this.findSocketByUsername(awayUserName);
 
-    if (awaySocket)
-    {
+    if (awaySocket) {
       awaySocket.emit('res::game::invite', { homeName: client.data.user.username, awayName: awayUserName });
       Logger.log("[Chat - Invite Game] Home User Name " + client.data.user.username);
       Logger.log("[Chat - Invite Game] Away User Name " + awayUserName);
     }
-    else
-    {
-       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+    else {
+      Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
     }
   }
 
@@ -217,15 +273,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    if (homeSocket)
-    {
+    if (homeSocket) {
       homeSocket.emit('res::game::approve', { homeName: homeUserName, awayName: client.data.user.username });
       Logger.log("[Chat - Approve Game] Home User Name " + homeSocket);
       Logger.log("[Chat - Approve Game] Away User Name " + client.data.user.username);
     }
-    else
-    {
-       Logger.error("[Chat - Approve Game] Can't Find Home User Socket");
+    else {
+      Logger.error("[Chat - Approve Game] Can't Find Home User Socket");
     }
   }
 
@@ -234,30 +288,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    if (homeSocket)
-    {
+    if (homeSocket) {
       homeSocket.emit('res::game::reject', { homeName: homeUserName, awayName: client.data.user.username });
       Logger.log("[Chat - Reject Game] Home User Name " + homeSocket);
       Logger.log("[Chat - Reject Game] Away User Name " + client.data.user.username);
     }
-    else
-    {
-       Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
+    else {
+      Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
     }
   }
 
   private findSocketByUsername(username: string): Socket | null {
     for (let socket of this.clients) {
-        if (socket.data && socket.data.user && socket.data.user.username === username) {
-            return socket;
-        }
+      if (socket.data && socket.data.user && socket.data.user.username === username) {
+        return socket;
+      }
     }
     return null;
   }
-  
+
   /* Methods */
-  joinRoom(client: Socket, channelId: string)
-  {
+  joinRoom(client: Socket, channelId: string) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
     if (!this.rooms.has(channelId))
@@ -282,5 +333,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.rooms.delete(channelId);
     }
     console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
+  }
+
+  findClientFromSocket(username: string) {
+    return Array.from(this.clients).find((client) => {
+      return client.data.user && client.data.user.username === username;
+    });
   }
 }

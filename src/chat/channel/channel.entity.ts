@@ -22,9 +22,9 @@ export class Channel
   @OneToMany(() => UserChannel, (userChannel) => userChannel.channel, { onDelete: 'CASCADE' })
   userChannel: UserChannel[];
 
-  @OneToMany(() => Message, (message) => message.channel)
+  @OneToMany(() => Message, (message) => message.channel, { cascade: true, onDelete: 'CASCADE' })
   channelMessage: Message[];
 
-  @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.channel)
+  @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.channel, { cascade: true, onDelete: 'CASCADE' })
   bannedUser: ChannelBanned[];
 }
