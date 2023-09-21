@@ -216,14 +216,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(client: Socket, payload: any) {
     const channelId = payload.channelId;
     const message = payload.content;
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const userDto = UserDto.from(await this.userService.findOneByUsername(client.data.user.username));
 
     try {
-      const user: User = await this.userService.findOneByUsername(userInfo.username);
+      const user: User = await this.userService.findOneByUsername(userDto.username);
       const channel: Channel = await this.channelService.findOneById(channelId);
       if (await this.userChannelService.isUserJoinedChannel(user.id, channel.id)) {
         await this.messageService.createMessage(user, channel, message);
-        client.to(channelId).emit('res::message::receive', { from: userInfo, message: payload });
+        client.to(channelId).emit('res::message::receive', { from: userDto, message: payload });
       }
       else
         client.emit('res::error', 'Send message Fail! ( You are not channel member )');
@@ -232,7 +232,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('res::error', 'send message create fail!');
     }
 
-    console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
+    console.log("Chat-Socket : <", userDto.username, "> send message =>", payload);
   }
 
   @SubscribeMessage('req::user::follow')
