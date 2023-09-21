@@ -73,7 +73,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::list')
   async handleUserList(client: Socket) {
-    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
+    const connectedClients = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
       .filter((userInfo) => userInfo.username !== client.data.user.username);
     const user = (await this.userService.findOneByUsername(client.data.user.username));
 
@@ -81,7 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const following = Array.from(followingFriends).map((uf) => {
       const userDto = UserDto.from(uf.followedUser);
 
-      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser.username)) {
+      if (connectedClients.find((userInfo) => userInfo.username === uf.followedUser.username)) {
         userDto.isConnected = true;
       }
       else {
@@ -92,8 +92,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const followerFriends = await this.friendService.findFollowerFriendsByUser(user);
     const follower = Array.from(followerFriends).map((uf) => UserDto.from(uf.user));
+    const connectedUserPromises = await Array.from(connectedClients).map(async (cc) => {
+      const user = await this.userService.findOneByUsername(cc.username);
+      if (user)
+        return UserDto.from(user);
+    })
 
-    client.emit('res::user::list', { following: following, follower: follower, publicUsers: allUserInfo });
+    const connectedUsers = await Promise.all(connectedUserPromises);
+    console.log(connectedUsers);
+    client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers});
   }
 
   @SubscribeMessage('req::room::join')
