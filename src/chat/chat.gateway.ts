@@ -49,7 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.clients.add(client);
 
-      this.server.emit('res::user::connect', { id: user.id, username: user.username });
+      this.server.emit('res::user::connect', { id: user.id, username: user.username, imageUrl: user.imageUrl});
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
