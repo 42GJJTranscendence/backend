@@ -20,6 +20,7 @@ import { FriendService } from 'src/module/users/friend/friend.service';
 import { Logger } from '@nestjs/common';
 import { ChannelBanned } from './channel_banned/channel_banned.entity';
 import { ChannelBannedService } from './channel_banned/channel_banned.service';
+import { ChannelMuteService } from './channel_mute/channel_mute.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -31,6 +32,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly channelService: ChannelService,
     private readonly userChannelService: UserChannelService,
     private readonly channelBannedService: ChannelBannedService,
+    private readonly channelMuteService: ChannelMuteService,
     private readonly messageService: MessageService,
     private readonly friendService: FriendService) { }
 
@@ -148,7 +150,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.channelBannedService.addChannelBanUser(channel, targetUser);
         await this.userChannelService.removeUserFromChannel(targetUser.id, channel.id);
         const targetClient = this.findSocketByUsername(targetUser.username);
-        this.leaveRoom(targetClient, payload.channelId);channel.id.toString();
+        this.leaveRoom(targetClient, payload.channelId); channel.id.toString();
         console.log("Chat-Socket : <", targetUser.username, "> banned from =>", channel.id);
       }
       else {
@@ -167,18 +169,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
 
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
-        await this.channelBannedService.addChannelBanUser(channel, targetUser);
-        await this.userChannelService.removeUserFromChannel(targetUser.id, channel.id);
+        await this.channelMuteService.addChannelMuteUser(channel, targetUser);
         const targetClient = this.findSocketByUsername(targetUser.username);
-        this.leaveRoom(targetClient, payload.channelId);channel.id.toString();
-        console.log("Chat-Socket : <", targetUser.username, "> banned from =>", channel.id);
+        console.log("Chat-Socket : <", targetUser.username, "> muted from =>", channel.id);
       }
       else {
         client.emit('res::error', 'You are not channel host');
       }
     } catch (error) {
       console.log(error);
-      client.emit('res::error', 'Ban User Fail!');
+      client.emit('res::error', 'Mute User Fail!');
     }
   }
 
@@ -262,6 +262,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user: User = await this.userService.findOneByUsername(userDto.username);
       const channel: Channel = await this.channelService.findOneById(channelId);
+
+      if (await this.channelMuteService.isUserMuteFromChannel(user, channel)) {
+        client.emit('res::error', 'Send message Fail! ( You are muted from channel )');
+        return;
+      }
+
       if (await this.userChannelService.isUserJoinedChannel(user.id, channel.id)) {
         await this.messageService.createMessage(user, channel, message);
         client.to(channelId).emit('res::message::receive', { from: userDto, message: payload });
