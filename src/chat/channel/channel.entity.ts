@@ -3,6 +3,7 @@ import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColum
 import { UserChannel } from "../user_channel/user_channel.entity";
 import { Message } from "../message/message.entity";
 import { ChannelBanned } from "../channel_banned/channel_banned.entity";
+import { ChannelMute } from "../channel_mute/channel_mute.entity";
 
 @Entity('channel')
 export class Channel
@@ -27,4 +28,7 @@ export class Channel
 
   @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.channel, { cascade: true, onDelete: 'CASCADE' })
   bannedUser: ChannelBanned[];
+
+  @OneToMany(() => ChannelMute, (channelMute) => channelMute.channel, { cascade: true, onDelete: 'CASCADE' })
+  mutedUser: ChannelMute[];
 }
