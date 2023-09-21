@@ -40,16 +40,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private clients: Set<Socket> = new Set();
   private rooms = new Map<string, Set<Socket>>();
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
       client.data.user = user
       client.data.rooms = new Set<string>();
-
       this.clients.add(client);
 
-      this.server.emit('res::user::connect', { id: user.id, username: user.username, imageUrl: user.imageUrl});
+      const userDto = UserDto.from(await this.userService.findOneByUsername(user.username));
+      this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl});
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
