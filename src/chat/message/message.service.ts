@@ -4,6 +4,7 @@ import { Message } from "./message.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "src/module/users/entity/user.entity";
 import { Channel } from "../channel/channel.entity";
+import { UserDto } from "src/module/users/dto/user.dto";
 
 @Injectable()
 export class MessageService {
@@ -38,7 +39,7 @@ export class MessageService {
             order: { createdAt: 'ASC' }, // createdAt 필드를 오래된 순서로 정렬
         });
 
-        return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: mh.user.username, content: mh.content, createdAt: mh.createdAt }))
+        return Array.from(messageHistorys).map((mh) => ({ id: mh.id, writer: UserDto.from(mh.user), content: mh.content, createdAt: mh.createdAt }))
 
     }
 }

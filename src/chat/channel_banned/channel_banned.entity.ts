@@ -1,5 +1,5 @@
 import { User } from "src/module/users/entity/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Channel } from "../channel/channel.entity";
 
 @Entity('channel_banned')
@@ -8,11 +8,11 @@ export class ChannelBanned
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'int'})
+    @JoinColumn({ name: 'userId'})
     @ManyToOne(() => User, (user) => user.bannedChannel)
     user: User;
     
-    @Column({ type: 'int'})
+    @JoinColumn({ name: 'channelId'})
     @ManyToOne(() => Channel, (channel) => channel.bannedUser)
     channel: Channel;
 
