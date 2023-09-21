@@ -49,7 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.clients.add(client);
 
       const userDto = UserDto.from(await this.userService.findOneByUsername(user.username));
-      this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl});
+      this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl });
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
@@ -100,7 +100,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const connectedUsers = await Promise.all(connectedUserPromises);
     console.log(connectedUsers);
-    client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers});
+    client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers });
   }
 
   @SubscribeMessage('req::room::join')
@@ -113,6 +113,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (await this.channelBannedService.isUserBannedFromChannel(user, channel)) {
         client.emit('res::error', 'join channel fail! (You are banned from channel)');
+        return;
       }
 
       if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
@@ -138,7 +139,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('req::room::ban')
-  async handleBanFromRoom(client: Socket, payload: any) {
+  async handleBanFromChannel(client: Socket, payload: any) {
     try {
       const channel = await this.channelService.findOneById(payload.channelId);
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
@@ -146,8 +147,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
         await this.channelBannedService.addChannelBanUser(channel, targetUser);
         await this.userChannelService.removeUserFromChannel(targetUser.id, channel.id);
-        const targetClient = this.findClientFromSocket(targetUser.username);
-        this.leaveRoom(targetClient, channel.id.toString());
+        const targetClient = this.findSocketByUsername(targetUser.username);
+        this.leaveRoom(targetClient, payload.channelId);channel.id.toString();
+        console.log("Chat-Socket : <", targetUser.username, "> banned from =>", channel.id);
+      }
+      else {
+        client.emit('res::error', 'You are not channel host');
+      }
+    } catch (error) {
+      console.log(error);
+      client.emit('res::error', 'Ban User Fail!');
+    }
+  }
+
+  @SubscribeMessage('req::room::mute')
+  async handleMuteFromChannel(client: Socket, payload: any) {
+    try {
+      const channel = await this.channelService.findOneById(payload.channelId);
+      const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
+
+      if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
+        await this.channelBannedService.addChannelBanUser(channel, targetUser);
+        await this.userChannelService.removeUserFromChannel(targetUser.id, channel.id);
+        const targetClient = this.findSocketByUsername(targetUser.username);
+        this.leaveRoom(targetClient, payload.channelId);channel.id.toString();
         console.log("Chat-Socket : <", targetUser.username, "> banned from =>", channel.id);
       }
       else {
@@ -166,9 +189,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const channel = await this.channelService.findOneById(payload.channelId);
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
-        if ((await this.userChannelService.setUserOwner(channel,targetUser)) != null) {
-          console.log("Chat-Socket : <", client.data.user.username, "> give owner => ", "<", targetUser.username,">");
-          this.findSocketByUsername(targetUser.username).emit('res::room::amiOwner', { channelId: channel.id, isOwner: true});
+        if ((await this.userChannelService.setUserOwner(channel, targetUser)) != null) {
+          console.log("Chat-Socket : <", client.data.user.username, "> give owner => ", "<", targetUser.username, ">");
+          this.findSocketByUsername(targetUser.username).emit('res::room::amiOwner', { channelId: channel.id, isOwner: true });
         }
         else {
           client.emit('res::error', 'targetUser is not channel member');
@@ -181,13 +204,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('req::room::amiOwner')
-  async hanndleAmIOwner(client: Socket, payload: any)
-  {
+  async hanndleAmIOwner(client: Socket, payload: any) {
     try {
       const user = await this.userService.findOneByUsername(client.data.user.username);
       const channel = await this.channelService.findOneById(payload.channelId);
       const isOwner = await this.userChannelService.isUserOwnerOfChannel(channel.id, user.id);
-      client.emit('res::room::amiOwner', { channelId: channel.id, isOwner: isOwner});
+      client.emit('res::room::amiOwner', { channelId: channel.id, isOwner: isOwner });
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'Check Owner fail');
@@ -214,12 +236,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const user = await this.userService.findOneByUsername(userInfo.username);
+      console.log("REQUEST USER : ", user);
       const targetUser = await this.userService.findOneByUsername(targetUsername);
+      console.log("TARGET USER : ", user);
       let channel = await this.channelService.findDirectChannelForUser(user.id, targetUser.id);
+      console.log("FOUND CHANNEL : ", channel);
       if (channel == null) {
+        console.log("Can't find channel so creating.....");
         channel = await this.channelService.createDirectChannelForUser(user, targetUser);
+        console.log("CREATED CHANEL : ", channel);
       }
-
       client.emit('res::room::dm', { joinedTo: channel.id });
     } catch (error) {
       console.log(error);
@@ -320,17 +346,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  private findSocketByUsername(username: string): Socket | null {
-    for (let socket of this.clients) {
-      if (socket.data && socket.data.user && socket.data.user.username === username) {
-        return socket;
-      }
-    }
-    return null;
-  }
-
   /* Methods */
-  joinRoom(client: Socket, channelId: string) {
+
+  private joinRoom(client: Socket, channelId: string) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
     if (!this.rooms.has(channelId))
@@ -342,7 +360,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
   }
 
-  leaveRoom(client: Socket, channelId: string) {
+  private leaveRoom(client: Socket, channelId: string) {
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
 
     client.to(channelId).emit('res::room::leave', { userInfo: userInfo, from: channelId });
@@ -357,9 +375,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
   }
 
-  findClientFromSocket(username: string) {
-    return Array.from(this.clients).find((client) => {
-      return client.data.user && client.data.user.username === username;
-    });
+  private findSocketByUsername(username: string): Socket | null {
+    for (let socket of this.clients) {
+      if (socket.data && socket.data.user && socket.data.user.username === username) {
+        return socket;
+      }
+    }
+    return null;
   }
 }
