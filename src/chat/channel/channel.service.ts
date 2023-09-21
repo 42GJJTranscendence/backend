@@ -50,7 +50,7 @@ export class ChannelService {
         channel = channel.filter((c) => c.userChannel.length == 2)
         if (channel.length == 0)
             return null;
-        else if (channel.length == 1)
+        else if (channel.length >= 1)
             return channel[0];
         else {
             console.log("CHANNEL_LENGTH : ", channel.length);
