@@ -73,7 +73,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::list')
   async handleUserList(client: Socket) {
-    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
+    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username, imgUrl: c.data.user.imgUrl }))
       .filter((userInfo) => userInfo.username !== client.data.user.username);
     const user = (await this.userService.findOneByUsername(client.data.user.username));
 
