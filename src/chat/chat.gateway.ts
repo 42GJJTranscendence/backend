@@ -238,7 +238,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user = await this.userService.findOneByUsername(userInfo.username);
       console.log("REQUEST USER : ", user);
       const targetUser = await this.userService.findOneByUsername(targetUsername);
-      console.log("TARGET USER : ", user);
+      console.log("TARGET USER : ", targetUser);
       let channel = await this.channelService.findDirectChannelForUser(user.id, targetUser.id);
       console.log("FOUND CHANNEL : ", channel);
       if (channel == null) {
