@@ -21,6 +21,7 @@ import { Logger } from '@nestjs/common';
 import { ChannelBanned } from './channel_banned/channel_banned.entity';
 import { ChannelBannedService } from './channel_banned/channel_banned.service';
 import { ChannelMuteService } from './channel_mute/channel_mute.service';
+import { BlackListService } from 'src/module/users/black_list/black_list.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -34,7 +35,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly channelBannedService: ChannelBannedService,
     private readonly channelMuteService: ChannelMuteService,
     private readonly messageService: MessageService,
-    private readonly friendService: FriendService) { }
+    private readonly friendService: FriendService,
+    private readonly blackListService: BlackListService) { }
 
   @WebSocketServer()
   server: Server;
@@ -184,7 +186,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::room::setOwner')
   async hanndleSetOwnner(client: Socket, payload: any) {
-
     try {
       const channel = await this.channelService.findOneById(payload.channelId);
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
@@ -236,20 +237,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const user = await this.userService.findOneByUsername(userInfo.username);
-      console.log("REQUEST USER : ", user);
       const targetUser = await this.userService.findOneByUsername(targetUsername);
-      console.log("TARGET USER : ", targetUser);
+
+      if (await this.blackListService.isBlackUser(targetUser.id, user.id)) {
+        client.emit('res::error', 'You are blacked!');
+        return;
+      }
       let channel = await this.channelService.findDirectChannelForUser(user.id, targetUser.id);
-      console.log("FOUND CHANNEL : ", channel);
       if (channel == null) {
-        console.log("Can't find channel so creating.....");
         channel = await this.channelService.createDirectChannelForUser(user, targetUser);
-        console.log("CREATED CHANEL : ", channel);
       }
       client.emit('res::room::dm', { joinedTo: channel.id });
     } catch (error) {
       console.log(error);
-      client.emit('res::room::dm', 'Can\'t find dmChannel or create dmChannle');
+      client.emit('res::error', 'Can\'t find dmChannel or create dmChannle');
     }
   }
 
@@ -301,7 +302,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       await this.friendService.followUser(user, targetUser);
 
-      client.emit('res::user::follow', 'Follow success!')
+      this.findSocketByUsername(targetUser.username).emit('res::user::follow', { followedBy: UserDto.from(user) });
+    } catch (error) {
+      client.emit('res::error', "Follow fail!");
+    }
+  }
+
+  @SubscribeMessage('req::user::black')
+  async handleBlackUser(client: Socket, payload: any) {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const targetUserName = payload.targetUsername;
+
+    try {
+      const user = await this.userService.findOneByUsername(userInfo.username);
+      const targetUser = await this.userService.findOneByUsername(targetUserName);
+
+      if (await this.blackListService.isBlackUser(user.id, targetUser.id)) {
+        client.emit('res::error', 'Already blacked!');
+        return;
+      }
+      else if (targetUserName === userInfo.username) {
+        client.emit('res::error', 'You can\'t black yourself!');
+        return;
+      }
+      await this.blackListService.addBlackUser(user, targetUser);
+      await this.friendService.cancelFollowUser(user.id, targetUser.id);
     } catch (error) {
       client.emit('res::error', "Follow fail!");
     }
@@ -311,6 +336,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleInviteGame(client: Socket, payload: any) {
     const awayUserName = payload.username;
     const awaySocket = this.findSocketByUsername(awayUserName);
+
+    if (await this.blackListService.isBlackUser(awaySocket.data.user.id, client.data.user.id)) {
+      client.emit('res::error', 'You are blacked!');
+      return;
+    }
 
     if (awaySocket) {
       awaySocket.emit('res::game::invite', { homeName: client.data.user.username, awayName: awayUserName });
