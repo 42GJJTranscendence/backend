@@ -27,7 +27,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly userService: UserService,
     private readonly channelService: ChannelService,
     private readonly userChannelService: UserChannelService,
-    private readonly messageService: MessageService) { }
+    private readonly messageService: MessageService,
+  ) {}
 
   @WebSocketServer()
   server: Server;
@@ -36,16 +37,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private rooms = new Map<string, Set<Socket>>();
 
   handleConnection(client: Socket) {
-    const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
+    const token = Array.isArray(client.handshake.query.token)
+      ? client.handshake.query.token[0]
+      : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
-      client.data.user = user
+      client.data.user = user;
       client.data.rooms = new Set<string>();
 
       this.clients.add(client);
 
-      this.server.emit('res::user::connect', { id: user.id, username: user.username });
-      console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
+      this.server.emit('res::user::connect', {
+        id: user.id,
+        username: user.username,
+      });
+      console.log('Chat-Socket : <', user.username, '> connect Chat-Socket.');
     } catch (error) {
       console.log(error.response);
       client.disconnect();
@@ -54,13 +60,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket) {
     this.clients.delete(client);
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
+    const userInfo = {
+      id: client.data.user.id,
+      username: client.data.user.username,
+    };
+    console.log(
+      'Chat-Socket : <',
+      userInfo.username,
+      '> disconnect Chat-Socket',
+    );
 
     client.data.rooms.forEach((roomName) => {
       this.leaveRoom(client, roomName);
     });
-    console.log("Chat-Socket : User leave room ", client.data.rooms);
+    console.log('Chat-Socket : User leave room ', client.data.rooms);
 
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
@@ -68,43 +81,68 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::list')
   async handleUserList(client: Socket) {
-    const allUserInfo = Array.from(this.clients).map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
+    const allUserInfo = Array.from(this.clients)
+      .map((c) => ({ id: c.data.user.id, username: c.data.user.username }))
       .filter((userInfo) => userInfo.username !== client.data.user.username);
-    const user = (await this.userService.findOneByUsername(client.data.user.username));
+    const user = await this.userService.findOneByUsername(
+      client.data.user.username,
+    );
 
     const userFriends = user.friends;
     const following = Array.from(userFriends).map((uf) => {
       const userDto = UserDto.from(uf.followedUser);
 
-      if (allUserInfo.find((userInfo) => userInfo.username === uf.followedUser)) {
-        allUserInfo
+      if (
+        allUserInfo.find((userInfo) => userInfo.username === uf.followedUser)
+      ) {
+        allUserInfo;
         userDto.isConnected = true;
-      }
-      else
-        userDto.isConnected = false;
+      } else userDto.isConnected = false;
       return userDto;
     });
 
-    const follower = Array.from(user.followedBy).map((uf) => UserDto.from(uf.user));
+    const follower = Array.from(user.followedBy).map((uf) =>
+      UserDto.from(uf.user),
+    );
 
-    client.emit('res::user::list', { following: following, follower: follower, publicUsers: allUserInfo });
+    client.emit('res::user::list', {
+      following: following,
+      follower: follower,
+      publicUsers: allUserInfo,
+    });
   }
 
   @SubscribeMessage('req::room::join')
   async handleJoinChannel(client: Socket, payload: any) {
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const userInfo = {
+      id: client.data.user.id,
+      username: client.data.user.username,
+    };
     const channelId = payload.channelId;
     const channel = await this.channelService.findOneById(channelId);
-    const user = await this.userService.findOneByUsername(client.data.user.username);
+    const user = await this.userService.findOneByUsername(
+      client.data.user.username,
+    );
 
-    if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
-      if (channel.type == 'PRIVATE'
-        && ( payload.password == null || typeof payload.password !== 'string' || !(await bcrypt.compare(payload.password, channel.password))))
-        {
-          client.emit('res::error', 'join channel fail!');
-          console.log("Chat-Socket : <", userInfo.username, "> fail to join => {", channelId, "}");
-          return ;
-        }
+    if (
+      !(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))
+    ) {
+      if (
+        channel.type == 'PRIVATE' &&
+        (payload.password == null ||
+          typeof payload.password !== 'string' ||
+          !(await bcrypt.compare(payload.password, channel.password)))
+      ) {
+        client.emit('res::error', 'join channel fail!');
+        console.log(
+          'Chat-Socket : <',
+          userInfo.username,
+          '> fail to join => {',
+          channelId,
+          '}',
+        );
+        return;
+      }
       await this.userChannelService.addUser(channel, user);
     }
 
@@ -118,8 +156,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::room::history')
   async handleMessageHistory(client: Socket, payload: any) {
-    if (this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
-      const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
+    if (
+      this.userChannelService.isUserJoinedChannel(
+        client.data.user.id,
+        payload.channelId,
+      )
+    ) {
+      const messageHistory = await this.messageService.findMessageHistory(
+        payload.channelId,
+      );
       client.emit('res::room::history', messageHistory);
     }
   }
@@ -133,19 +178,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(client: Socket, payload: any) {
     const channelId = payload.channelId;
     const message = payload.content;
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const userInfo = {
+      id: client.data.user.id,
+      username: client.data.user.username,
+    };
 
     try {
-      const user: User = await this.userService.findOneByUsername(userInfo.username);
+      const user: User = await this.userService.findOneByUsername(
+        userInfo.username,
+      );
       const channel: Channel = await this.channelService.findOneById(channelId);
       await this.messageService.createMessage(user, channel, message);
-      client.to(channelId).emit('res::message::receive', { from : userInfo, message : payload });
+      client
+        .to(channelId)
+        .emit('res::message::receive', { from: userInfo, message: payload });
     } catch (error) {
       console.log(error);
       client.emit('res::error', 'send message create fail!');
     }
 
-    console.log("Chat-Socket : <", userInfo.username, "> send message =>", payload);
+    console.log(
+      'Chat-Socket : <',
+      userInfo.username,
+      '> send message =>',
+      payload,
+    );
   }
 
   @SubscribeMessage('req::game::invite')
@@ -153,15 +210,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const awayUserName = payload.username;
     const awaySocket = this.findSocketByUsername(awayUserName);
 
-    if (awaySocket)
-    {
-      awaySocket.emit('res::game::invite', { homeName: client.data.user.username, awayName: awayUserName });
-      Logger.log("[Chat - Invite Game] Home User Name " + client.data.user.username);
-      Logger.log("[Chat - Invite Game] Away User Name " + awayUserName);
-    }
-    else
-    {
-       Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
+    if (awaySocket) {
+      awaySocket.emit('res::game::invite', {
+        homeName: client.data.user.username,
+        awayName: awayUserName,
+      });
+      Logger.log(
+        '[Chat - Invite Game] Home User Name ' + client.data.user.username,
+      );
+      Logger.log('[Chat - Invite Game] Away User Name ' + awayUserName);
+    } else {
+      Logger.error("[Chat - Invite Game] Can't Find Away User Socket");
     }
   }
 
@@ -170,15 +229,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    if (homeSocket)
-    {
-      homeSocket.emit('res::game::approve', { homeName: homeUserName, awayName: client.data.user.username });
-      Logger.log("[Chat - Approve Game] Home User Name " + homeUserName);
-      Logger.log("[Chat - Approve Game] Away User Name " + client.data.user.username);
-    }
-    else
-    {
-       Logger.error("[Chat - Approve Game] Can't Find Home User Socket");
+    if (homeSocket) {
+      homeSocket.emit('res::game::approve', {
+        homeName: homeUserName,
+        awayName: client.data.user.username,
+      });
+      Logger.log('[Chat - Approve Game] Home User Name ' + homeUserName);
+      Logger.log(
+        '[Chat - Approve Game] Away User Name ' + client.data.user.username,
+      );
+    } else {
+      Logger.error("[Chat - Approve Game] Can't Find Home User Socket");
     }
   }
 
@@ -187,59 +248,81 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
 
-    if (homeSocket)
-    {
-      homeSocket.emit('res::game::reject', { homeName: homeUserName, awayName: client.data.user.username });
-      Logger.log("[Chat - Reject Game] Home User Name " + homeUserName);
-      Logger.log("[Chat - Reject Game] Away User Name " + client.data.user.username);
-    }
-    else
-    {
-       Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
+    if (homeSocket) {
+      homeSocket.emit('res::game::reject', {
+        homeName: homeUserName,
+        awayName: client.data.user.username,
+      });
+      Logger.log('[Chat - Reject Game] Home User Name ' + homeUserName);
+      Logger.log(
+        '[Chat - Reject Game] Away User Name ' + client.data.user.username,
+      );
+    } else {
+      Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
     }
   }
 
   private findSocketByUsername(username: string): Socket | null {
     for (let socket of this.clients) {
-        if (socket.data && socket.data.user && socket.data.user.username === username) {
-            return socket;
-        }
+      if (
+        socket.data &&
+        socket.data.user &&
+        socket.data.user.username === username
+      ) {
+        return socket;
+      }
     }
     return null;
   }
 
   @SubscribeMessage('req::user::follow')
-  async handleUserFollow(client: Socket, payload: any) {
+  async handleUserFollow(client: Socket, payload: any) {}
 
-  }
-  
   /* Methods */
-  joinRoom(client: Socket, channelId: string)
-  {
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+  joinRoom(client: Socket, channelId: string) {
+    const userInfo = {
+      id: client.data.user.id,
+      username: client.data.user.username,
+    };
 
-    if (!this.rooms.has(channelId))
-      this.rooms.set(channelId, new Set());
+    if (!this.rooms.has(channelId)) this.rooms.set(channelId, new Set());
     client.join(channelId);
     client.data.rooms.add(channelId);
-    client.to(channelId).emit('res::room::join', { userInfo : userInfo, joinTo :channelId });
+    client
+      .to(channelId)
+      .emit('res::room::join', { userInfo: userInfo, joinTo: channelId });
 
-    console.log("Chat-Socket : <", userInfo.username, "> join room => {", channelId, "}");
+    console.log(
+      'Chat-Socket : <',
+      userInfo.username,
+      '> join room => {',
+      channelId,
+      '}',
+    );
   }
 
-  leaveRoom(client: Socket, channelId: string)
-  {
-    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+  leaveRoom(client: Socket, channelId: string) {
+    const userInfo = {
+      id: client.data.user.id,
+      username: client.data.user.username,
+    };
 
-    client.to(channelId).emit('res::room::leave', { userInfo : userInfo, from : channelId });
+    client
+      .to(channelId)
+      .emit('res::room::leave', { userInfo: userInfo, from: channelId });
     client.leave(channelId);
     client.data.rooms.delete(channelId);
 
     if (this.rooms.has(channelId)) {
       this.rooms.get(channelId).delete(client);
-      if (this.rooms.get(channelId).size == 0)
-        this.rooms.delete(channelId);
+      if (this.rooms.get(channelId).size == 0) this.rooms.delete(channelId);
     }
-    console.log("Chat-Socket : <", userInfo.username, "> leave room => {", channelId, "}");
+    console.log(
+      'Chat-Socket : <',
+      userInfo.username,
+      '> leave room => {',
+      channelId,
+      '}',
+    );
   }
 }
