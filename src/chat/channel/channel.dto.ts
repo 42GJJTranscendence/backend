@@ -6,3 +6,8 @@ export class createChannelRequestDto
     password? : string;
     type : ChannelType;
 }
+
+export class deleteChannelRequestDto
+{
+    channelId : number;
+}

@@ -13,7 +13,7 @@ export class ChannelBanned
     user: User;
     
     @JoinColumn({ name: 'channelId'})
-    @ManyToOne(() => Channel, (channel) => channel.bannedUser)
+    @ManyToOne(() => Channel, (channel) => channel.bannedUser, { onDelete: 'CASCADE' })
     channel: Channel;
 
     @Column()

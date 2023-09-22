@@ -33,9 +33,9 @@ export class ChannelService {
         return channels;
     }
 
-    async findDirectChannelForUser(user1Id: number, user2Id: number) : Promise<Channel | null>{
+    async findDirectChannelForUser(user1Id: number, user2Id: number): Promise<Channel | null> {
         let channel = await this.channelRepository
-            .createQueryBuilder( 'channel')
+            .createQueryBuilder('channel')
             .innerJoinAndSelect('channel.userChannel', 'userChannel')
             .innerJoin('userChannel.user', 'user')
             .where('channel.type = :type', { type: 'DIRECT' })
@@ -59,7 +59,7 @@ export class ChannelService {
         // return channel || null;
     }
 
-    async createDirectChannelForUser(user1 : User, user2: User) : Promise<Channel | null> {
+    async createDirectChannelForUser(user1: User, user2: User): Promise<Channel | null> {
         const channel = new Channel();
 
         channel.title = 'DM Chating';
@@ -85,5 +85,17 @@ export class ChannelService {
         const createdChannel = await this.channelRepository.save(channel);
         await this.userChannelService.addAdminUser(channel, user);
         return createdChannel;
+    }
+
+    async deleteChannel(channelId: number) {
+        // try {
+        await this.channelRepository
+            .createQueryBuilder()
+            .delete()
+            .where('id = :channelId', { channelId })
+            .execute();
+        // } catch (error) {
+        //     console.log('DELETE ERROR : ', error);
+        // }
     }
 }

@@ -18,8 +18,8 @@ export class ChannelMuteService {
             .into(ChannelMute)
             .values([
                 {
-                    channel: channel,
                     user: user,
+                    channel: channel,
                     until: new Date(Date.now() + 60 * 1000),
                 }
             ])

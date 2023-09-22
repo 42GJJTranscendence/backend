@@ -15,7 +15,7 @@ export class Message{
     user: User;
     
     @JoinColumn({ name: 'channelId' })
-    @ManyToOne(() => Channel, (channel) => channel.channelMessage)
+    @ManyToOne(() => Channel, (channel) => channel.channelMessage, { onDelete: 'CASCADE' })
     channel: Channel;
 
     @CreateDateColumn({default: () => 'CURRENT_TIMESTAMP' })

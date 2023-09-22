@@ -20,15 +20,15 @@ export class Channel
   @Column({ type: 'enum', enum: ChannelType })
   type: ChannelType;
 
-  @OneToMany(() => UserChannel, (userChannel) => userChannel.channel, { onDelete: 'CASCADE' })
+  @OneToMany(() => UserChannel, (userChannel) => userChannel.channel, { cascade: true })
   userChannel: UserChannel[];
 
-  @OneToMany(() => Message, (message) => message.channel, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => Message, (message) => message.channel, { cascade: true })
   channelMessage: Message[];
 
-  @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.channel, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => ChannelBanned, (channelBanned) => channelBanned.channel, { cascade: true })
   bannedUser: ChannelBanned[];
 
-  @OneToMany(() => ChannelMute, (channelMute) => channelMute.channel, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => ChannelMute, (channelMute) => channelMute.channel, { cascade: true })
   mutedUser: ChannelMute[];
 }
