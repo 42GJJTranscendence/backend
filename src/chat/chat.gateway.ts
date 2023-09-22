@@ -333,6 +333,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       await this.blackListService.addBlackUser(user, targetUser);
       await this.friendService.cancelFollowUser(user.id, targetUser.id);
+      client.emit('res::user::black', { blackedUser: UserDto.from(targetUserName)});
     } catch (error) {
       client.emit('res::error', "Follow fail!");
     }
