@@ -33,8 +33,8 @@ export class UserChannelService {
       .into(UserChannel)
       .values([
         {
-          channel: channel,
           user: user,
+          channel: channel,
           is_owner: false,
         }
       ])

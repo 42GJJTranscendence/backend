@@ -7,7 +7,8 @@ export class createChannelRequestDto
     type : ChannelType;
 }
 
-export class deleteChannelRequestDto
+export class joinChannelRequestDto
 {
     channelId : number;
+    password? : string;
 }
