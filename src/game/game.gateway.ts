@@ -54,6 +54,22 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.gameService.addHardClient(client);
   }
 
+  
+  @SubscribeMessage('req::game::invite')
+  async HandleInviteGame(client: Socket, data: any): Promise<void> {
+    const myName = client.data.user.username;
+    if (data.homeName == myName)
+    {
+      data.myPos = "home"
+      this.gameService.addInvite(client, data);
+    }
+    else
+    {
+      data.myPos = "away"
+      this.gameService.addInvite(client, data);
+    }
+  }
+
   @SubscribeMessage('req::user::move')
   async handlePlayerMessage(client: Socket, data: any): Promise<void> {
     this.gameService.movePlayerPosition(client, data);
