@@ -169,7 +169,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const channel = await this.channelService.findOneById(payload.channelId);
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
-      
+
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
         await this.channelMuteService.addChannelMuteUser(channel, targetUser);
         const targetClient = this.findSocketByUsername(targetUser.username);
@@ -221,6 +221,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleMessageHistory(client: Socket, payload: any) {
     if (await this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
       const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
+      const user = await this.userService.findOneByUsername(client.data.user.username);
       client.emit('res::room::history', messageHistory);
     }
   }
@@ -239,7 +240,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user = await this.userService.findOneByUsername(userInfo.username);
       const targetUser = await this.userService.findOneByUsername(targetUsername);
 
-      if (await this.blackListService.isBlackUser(targetUser.id, user.id)) {
+      if (await this.blackListService.isBlackUser(targetUser.id, user.id)
+      || await this.blackListService.isBlackUser(user.id, targetUser.id)) {
         client.emit('res::error', 'You are blacked!');
         return;
       }
@@ -337,7 +339,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const awayUserName = payload.username;
     const awaySocket = this.findSocketByUsername(awayUserName);
 
-    if (await this.blackListService.isBlackUser(awaySocket.data.user.id, client.data.user.id)) {
+    if (await this.blackListService.isBlackUser(awaySocket.data.user.id, client.data.user.id)
+      || await this.blackListService.isBlackUser(client.data.user.id, awaySocket.data.user.id)) {
       client.emit('res::error', 'You are blacked!');
       return;
     }
