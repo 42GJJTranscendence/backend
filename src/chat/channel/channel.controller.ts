@@ -81,8 +81,10 @@ export class ChannelController {
         }
 
         if (!(await this.userChannelService.isUserJoinedChannel(user.id, channel.id))) {
+            console.log('111111');
             if (channel.type == 'PRIVATE'
                 && (joinChannelRequestDto.password == null || !(await bcrypt.compare(joinChannelRequestDto.password, channel.password)))) {
+                res.status(403).send("password is wrong");
                 return;
             }
             await this.userChannelService.addUser(channel, user);
