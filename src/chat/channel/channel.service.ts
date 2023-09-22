@@ -21,6 +21,8 @@ export class ChannelService {
     }
 
     async findOneById(id: number): Promise<Channel> {
+        if (id == undefined || id == null)
+            return null;
         return await this.channelRepository.findOne({ where: { id } });
     }
 
