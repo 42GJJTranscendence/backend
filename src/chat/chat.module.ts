@@ -8,6 +8,7 @@ import { UsersModule } from 'src/module/users/users.module';
 import { FriendMoudle } from 'src/module/users/friend/friend.module';
 import { ChannelbannedModule } from './channel_banned/channel_banned.module';
 import { ChannelMuteModule } from './channel_mute/channel_mute.module';
+import { BlackListModule } from 'src/module/users/black_list/black_list.module';
 
 @Module({
   imports: [AuthModule,
@@ -17,7 +18,9 @@ import { ChannelMuteModule } from './channel_mute/channel_mute.module';
     UsersModule,
     FriendMoudle,
     ChannelbannedModule,
-    ChannelMuteModule],
+    ChannelMuteModule,
+    BlackListModule,
+  ],
   providers: [ChatGateway],
 })
 

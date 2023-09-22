@@ -15,7 +15,7 @@ export class FriendService {
     async findFollowingFriendsByUser(user: User) {
         return await this.friendRepository.find({
             where: {
-                user: {id: user.id}
+                user: { id: user.id }
             },
             relations: ['user', 'followedUser'],
         })
@@ -24,7 +24,7 @@ export class FriendService {
     async findFollowerFriendsByUser(user: User) {
         return await this.friendRepository.find({
             where: {
-                followedUser: {id: user.id}
+                followedUser: { id: user.id }
             },
             relations: ['user', 'followedUser'],
         })
@@ -55,5 +55,15 @@ export class FriendService {
             return true;
         else
             return false;
+    }
+
+    async cancelFollowUser(userId: number, targetUserId: number) {
+
+        await this.friendRepository
+            .createQueryBuilder()
+            .delete()
+            .where('userId = :userId', { userId })
+            .andWhere('followedUserId = :targetUserId', { targetUserId })
+            .execute();
     }
 }
