@@ -44,6 +44,8 @@ export class GameService {
 			{
 				const gameSession = new GameSession(client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
+				this.inviteSockets.delete(data.homeName);
+				this.inviteSockets.delete(data.awayName);
 			}
 		}
 		else
@@ -56,10 +58,10 @@ export class GameService {
 			{
 				const gameSession = new GameSession(this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
+				this.inviteSockets.delete(data.homeName);
+				this.inviteSockets.delete(data.awayName);
 			}
 		}
-		this.inviteSockets.delete(data.homeName);
-		this.inviteSockets.delete(data.awayName);
 	}
 
 	addNormalClient(client: Socket)
