@@ -12,7 +12,7 @@ export class UserChannel {
     user: User;
     
     @JoinColumn({ name: 'channelId' })
-    @ManyToOne(() => Channel, (channel) => channel.userChannel)
+    @ManyToOne(() => Channel, (channel) => channel.userChannel, { onDelete: 'CASCADE' })
     channel: Channel;
 
     @Column()

@@ -1,17 +1,20 @@
-import { Body, Controller, Get, HttpStatus, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Res, UseGuards } from "@nestjs/common";
 import { ChannelService } from "./channel.service";
-import { createChannelRequestDto } from "./channel.dto";
+import { createChannelRequestDto, deleteChannelRequestDto } from "./channel.dto";
 import { AuthGuard } from "@nestjs/passport";
 import { GetUser } from "src/auth/scurity/get-user.decorator";
 import { User } from "src/module/users/entity/user.entity";
 import { MessageService } from "../message/message.service";
 import { create } from "domain";
+import { UserChannelService } from "../user_channel/user_channel.service";
+import { channel } from "diagnostics_channel";
 
 @Controller('channels')
 export class ChannelController {
 
     constructor (
         private channelService : ChannelService,
+        private userChannelService : UserChannelService,
     ){}
 
     @Get()
@@ -36,5 +39,29 @@ export class ChannelController {
             res.status(HttpStatus.BAD_REQUEST).send("PRIVATE type room needs password!");
         const createdChannel = await this.channelService.createChannel(createChannelDto, user);
         res.status(201).send("Created!");
+    }
+
+    @Delete('/delete/:channelId')
+    @UseGuards(AuthGuard())
+    async deleteChannel(@Param('channelId') channelId: number, @GetUser() user: User, @Res() res) {
+        console.log(channelId, user);
+        if (await this.userChannelService.isUserOwnerOfChannel(channelId, user.id)) {
+            await this.channelService.deleteChannel(channelId);
+            res.status(200).send("Deleted!");
+        }
+        else
+            res.status(401).send("You are not owner of channel");
+    }
+
+    @Delete('/leave/:channelId')
+    @UseGuards(AuthGuard())
+    async leaveChannel(@Param('channelId') channelId: number, @GetUser() user: User, @Res() res) {
+        console.log(channelId, user);
+        if (await this.userChannelService.isUserJoinedChannel(user.id, channelId)) {
+            await this.userChannelService.removeUserFromChannel(user.id, channelId);
+            res.status(200).send("Deleted!");
+        }
+        else
+            res.status(401).send("You are not member of channel");
     }
 }

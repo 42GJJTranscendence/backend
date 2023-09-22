@@ -169,7 +169,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const channel = await this.channelService.findOneById(payload.channelId);
       const targetUser = await this.userService.findOneByUsername(payload.targetUsername);
-
+      
       if (await this.userChannelService.isUserOwnerOfChannel(channel.id, client.data.user.id)) {
         await this.channelMuteService.addChannelMuteUser(channel, targetUser);
         const targetClient = this.findSocketByUsername(targetUser.username);
@@ -219,7 +219,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::room::history')
   async handleMessageHistory(client: Socket, payload: any) {
-    if (this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
+    if (await this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
       const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
       client.emit('res::room::history', messageHistory);
     }
