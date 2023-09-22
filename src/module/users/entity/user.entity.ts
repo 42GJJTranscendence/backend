@@ -45,9 +45,9 @@ export class User {
   @OneToMany(() => Friend, (friend) => friend.followedUser)
   followedBy : Friend[];
 
-  @OneToMany(() => BlackList, (blackList) => blackList.user)
+  @OneToMany(() => BlackList, (blackList) => blackList.user, {lazy: true})
   blackLists : BlackList[];
 
-  @OneToMany(() => BlackList, (blackList) => blackList.blackUser)
+  @OneToMany(() => BlackList, (blackList) => blackList.blackUser, {lazy: true})
   blackedBy : BlackList[];
 }

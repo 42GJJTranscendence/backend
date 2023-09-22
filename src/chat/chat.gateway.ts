@@ -103,8 +103,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     })
 
     const connectedUsers = await Promise.all(connectedUserPromises);
-    console.log(connectedUsers);
-    client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers });
+    const blackList = await user.blackLists;
+    const blackListDto = blackList.forEach((bl) => UserDto.from(bl.blackUser));
+    client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers, blackList: blackListDto});
   }
 
   @SubscribeMessage('req::room::join')
@@ -220,10 +221,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('req::room::history')
   async handleMessageHistory(client: Socket, payload: any) {
     if (await this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
-      const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
+      let messageHistory = await this.messageService.findMessageHistory(payload.channelId);
       const user = await this.userService.findOneByUsername(client.data.user.username);
-      const blackList = await this.blackListService.findBlackListsByUser(user);
-      
+      const blackList = await user.blackLists;
+      messageHistory = messageHistory.filter((mh) => blackList.find((bl) => bl.blackUser.username == mh.writer) == null);
+
       client.emit('res::room::history', messageHistory);
     }
   }
