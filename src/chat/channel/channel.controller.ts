@@ -76,7 +76,7 @@ export class ChannelController {
         }
 
         if (await this.channelBannedService.isUserBannedFromChannel(user, channel)) {
-            res.status(201).send("Joined!");
+            res.status(403).send("You are banned from channel");
             return;
         }
 
@@ -89,7 +89,7 @@ export class ChannelController {
             res.status(201).send("Joined!");
         }
         else {
-            res.status(404).send("You already joined channel");
+            res.status(201).send("Joined!");
         }
     }
 }
