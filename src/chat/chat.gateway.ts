@@ -222,6 +222,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (await this.userChannelService.isUserJoinedChannel(client.data.user.id, payload.channelId)) {
       const messageHistory = await this.messageService.findMessageHistory(payload.channelId);
       const user = await this.userService.findOneByUsername(client.data.user.username);
+      const blackList = await this.blackListService.findBlackListsByUser(user);
+      
       client.emit('res::room::history', messageHistory);
     }
   }
