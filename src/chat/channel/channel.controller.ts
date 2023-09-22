@@ -76,7 +76,7 @@ export class ChannelController {
         }
 
         if (await this.channelBannedService.isUserBannedFromChannel(user, channel)) {
-            res.status(403).send("You are banned from channel");
+            res.status(201).send("Joined!");
             return;
         }
 
