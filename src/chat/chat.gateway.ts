@@ -22,6 +22,7 @@ import { ChannelBanned } from './channel_banned/channel_banned.entity';
 import { ChannelBannedService } from './channel_banned/channel_banned.service';
 import { ChannelMuteService } from './channel_mute/channel_mute.service';
 import { BlackListService } from 'src/module/users/black_list/black_list.service';
+import { UserStatusService } from 'src/module/users/service/userStatus.service';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -36,7 +37,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly channelMuteService: ChannelMuteService,
     private readonly messageService: MessageService,
     private readonly friendService: FriendService,
-    private readonly blackListService: BlackListService) { }
+    private readonly blackListService: BlackListService,
+    private readonly userStatusService: UserStatusService) { }
 
   @WebSocketServer()
   server: Server;
@@ -48,6 +50,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
+      this.userStatusService.setUserStatus(user.username, 'online'); // 온라인 상태
       client.data.user = user
       client.data.rooms = new Set<string>();
       this.clients.add(client);
@@ -64,6 +67,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    this.userStatusService.setUserStatus(client.data.user.username, 'offline'); // 온라인 상태
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
 
     client.data.rooms.forEach((roomName) => {
@@ -441,6 +445,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     else {
       Logger.error("[Chat - Reject Game] Can't Find Home User Socket");
     }
+  }
+
+  @SubscribeMessage('req::user::status')
+  async handleUserStatus(client: Socket, payload: any) {
+    const userStatus = this.userStatusService.getUserStatus(payload.username);
+    client.emit('res::user::status', {status: userStatus});
   }
 
   /* Methods */

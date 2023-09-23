@@ -6,14 +6,15 @@ import { UserController } from "./controller/user.controller";
 import { PassportModule } from "@nestjs/passport";
 import { FriendMoudle } from "./friend/friend.module";
 import { AuthModule } from "src/auth/auth.module";
+import { UserStatusService } from "./service/userStatus.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]), User,
   PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [UserController],
-  providers: [UserService],
-  exports: [UserService],
+  providers: [UserService, UserStatusService],
+  exports: [UserService, UserStatusService],
 
 })
 export class UsersModule { }
