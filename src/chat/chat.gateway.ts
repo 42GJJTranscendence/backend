@@ -490,4 +490,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     return null;
   }
+  
+  public sendUserStatusUpdate(username: string, status: string) {
+    this.server.emit('user::status::changed', { username, status });
+  }
 }
