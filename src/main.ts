@@ -6,7 +6,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
 import { SocketAdapter } from './config/socket.adapter';
 import * as cookieParser from 'cookie-parser';
-import * as express from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 

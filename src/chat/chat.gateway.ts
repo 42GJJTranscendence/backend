@@ -308,9 +308,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       await this.friendService.followUser(user, targetUser);
 
-      this.findSocketByUsername(targetUser.username).emit('res::user::follow', { followedBy: UserDto.from(user) });
+      const targetUserSocket = this.findSocketByUsername(targetUser.username)
+      if (targetUserSocket)
+        targetUserSocket.emit('res::user::follow', { followedBy: UserDto.from(user) });
     } catch (error) {
       client.emit('res::error', "Follow fail!");
+    }
+  }
+
+  @SubscribeMessage('req::user::unfollow')
+  async handleUserUnFollow(client: Socket, payload: any) {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const targetUserName = payload.targetUsername;
+
+    try {
+      const user = await this.userService.findOneByUsername(userInfo.username);
+      const targetUser = await this.userService.findOneByUsername(targetUserName);
+
+      if (!(await this.friendService.isFollowUser(user, targetUser))) {
+        client.emit('res::user::unfollow', 'Already unfollowed!');
+        return;
+      }
+      else if (targetUserName === userInfo.username) {
+        client.emit('res::user::unfollow', 'You can\'t unfollow yourself!');
+        return;
+      }
+      await this.friendService.cancelFollowUser(user.id, targetUser.id);
+
+      const targetUserSocket = this.findSocketByUsername(targetUser.username)
+      if (targetUserSocket)
+        targetUserSocket.emit('res::user::unfollow', { followedBy: UserDto.from(user) });
+    } catch (error) {
+      client.emit('res::error', "Unfollow fail!");
     }
   }
 
@@ -335,7 +364,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.friendService.cancelFollowUser(user.id, targetUser.id);
       client.emit('res::user::black', { blackedUser: UserDto.from(targetUserName)});
     } catch (error) {
-      client.emit('res::error', "Follow fail!");
+      client.emit('res::error', "Black fail!");
+    }
+  }
+
+  @SubscribeMessage('req::user::unblack')
+  async handleUnBlackUser(client: Socket, payload: any) {
+    const userInfo = { id: client.data.user.id, username: client.data.user.username };
+    const targetUserName = payload.targetUsername;
+
+    try {
+      const user = await this.userService.findOneByUsername(userInfo.username);
+      const targetUser = await this.userService.findOneByUsername(targetUserName);
+
+      if (!(await this.blackListService.isBlackUser(user.id, targetUser.id))) {
+        client.emit('res::error', 'Already unblacked!');
+        return;
+      }
+      else if (targetUserName === userInfo.username) {
+        client.emit('res::error', 'You can\'t unblack yourself!');
+        return;
+      }
+      await this.blackListService.removeBlackUser(user.id, targetUser.id);
+      client.emit('res::user::unblack', { unblackedUser: UserDto.from(targetUserName)});
+    } catch (error) {
+      client.emit('res::error', "unblack fail!");
     }
   }
 

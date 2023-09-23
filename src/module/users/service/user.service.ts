@@ -23,6 +23,11 @@ export class UserService {
         return createdUser;
     }
 
+    async modifyUserImageUrl(user : User, imageUrl : string) : Promise<User> {
+        user.imageUrl = imageUrl;
+        return this.userRepository.save(user);
+    }
+
     async findOneByUserEmail(eMail : string) : Promise<User> {
         return await this.userRepository.findOne({ where : {eMail}})
     }
