@@ -29,8 +29,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user = await this.authService.vaildateUserToken(token);
       Logger.log("[Game] user.id : " + user.id + " | user.username : " + user.username);
-      this.userStatusService.setUserStatus(user.username, 'onGame'); // 게임 상태
-      this.chatGateway.sendUserStatusUpdate(user.username, 'onGame');
       if (user) {
           client.data.user = user;
       } else {
@@ -46,18 +44,19 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
   handleDisconnect(client: Socket) {
     Logger.log("[Game] Socket Disconnect : " + client.id);
-    this.userStatusService.setUserStatus(client.data.user.username, 'online'); // 온라인 상태
-    this.chatGateway.sendUserStatusUpdate(client.data.user.username, 'online');
+    this.changeUserStatus(client.data.user.username, 'online')
     this.gameService.removeClient(client);
   }
 
   @SubscribeMessage('req::normal::join')
   async joinNormalQueue(client: Socket, data: any): Promise<void> {
+    this.changeUserStatus(client.data.user.username, 'onGame')
     this.gameService.addNormalClient(client);
   }
 
   @SubscribeMessage('req::hard::join')
   async joinHardQueue(client: Socket, data: any): Promise<void> {
+    this.changeUserStatus(client.data.user.username, 'onGame')
     this.gameService.addHardClient(client);
   }
 
@@ -65,6 +64,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('req::game::invite')
   async HandleInviteGame(client: Socket, data: any): Promise<void> {
     const myName = client.data.user.username;
+    this.changeUserStatus(client.data.user.username, 'onGame')
+
     if (data.homeName == myName)
     {
       data.myPos = "home"
@@ -80,5 +81,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('req::user::move')
   async handlePlayerMessage(client: Socket, data: any): Promise<void> {
     this.gameService.movePlayerPosition(client, data);
+  }
+
+  private changeUserStatus(username: string, status: string) {
+    this.userStatusService.setUserStatus(username, status); // 게임 상태
+    this.chatGateway.sendUserStatusUpdate(username, status);
   }
 }
