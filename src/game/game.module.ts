@@ -9,10 +9,10 @@ import { Match } from './match/match.entity';
 import { UserService } from 'src/module/users/service/user.service';
 import { User } from 'src/module/users/entity/user.entity';
 import { UsersModule } from 'src/module/users/users.module';
-import { ChatGateway } from 'src/chat/chat.gateway';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Match]), Match, TypeOrmModule.forFeature([User]), User, AuthModule, UsersModule, ChatGateway],
+  imports: [TypeOrmModule.forFeature([Match]), Match, TypeOrmModule.forFeature([User]), User, AuthModule, UsersModule, ChatModule],
   providers: [GameGateway, GameService, MatchService, UserService],
   controllers: [GameController],
 })
