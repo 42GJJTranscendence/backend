@@ -5,6 +5,7 @@ import { UserService } from "./service/user.service";
 import { UserController } from "./controller/user.controller";
 import { PassportModule } from "@nestjs/passport";
 import { FriendMoudle } from "./friend/friend.module";
+import { AuthModule } from "src/auth/auth.module";
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]), User,

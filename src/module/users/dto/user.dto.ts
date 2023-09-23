@@ -16,3 +16,7 @@ export class UserDto {
         return userDto;
       }
 }
+
+export class ModifyUserImageRequestDto {
+  imageUrl: string;
+}

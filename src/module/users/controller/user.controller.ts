@@ -1,14 +1,11 @@
-import { Get, Controller, Param, Query, UseGuards, Post, UseInterceptors } from "@nestjs/common";
+import { Get, Controller, Param, Query, UseGuards, Post, UseInterceptors, Put, Res, Body } from "@nestjs/common";
 import { UserService } from "../service/user.service";
 import { AuthGuard } from "@nestjs/passport";
 import { GetUser } from "src/auth/scurity/get-user.decorator";
 import { User } from "../entity/user.entity";
-import { UserDto } from "../dto/user.dto";
-import { ApiBearerAuth } from "@nestjs/swagger";
-import { diskStorage } from 'multer';
-import { FileInterceptor } from "@nestjs/platform-express";
-import { existsSync, unlinkSync } from "fs";
-import { extname } from "path";
+import { join } from "path";
+import * as fs from 'fs';
+import { ModifyUserImageRequestDto, UserDto } from "../dto/user.dto";
 
 @Controller('users')
 export class UserController {
@@ -38,5 +35,33 @@ export class UserController {
         }
         else
             return false;
+    }
+
+    @Get('/images/list')
+    @UseGuards(AuthGuard())
+    async getImageList(@GetUser() user: User, @Res() res) {
+        try {
+            const fileNames = fs.readdirSync(join(__dirname, '../../..', 'assets/images'));
+            const imageUrls = fileNames.map((fn) => process.env.DOMAIN + '/images/' + fn);
+            imageUrls.push(user.fortytwoImageUrl);
+            res.status(200).send(imageUrls);
+        } catch (err) {
+            console.error('Error reading directory:', err);
+            res.status(500).send('Error reading images');
+        }
+    }
+
+    @Put('/images')
+    @UseGuards(AuthGuard())
+    async modifyUserImage(@GetUser() user: User, @Body() modifyUserImageDto : ModifyUserImageRequestDto, @Res() res) {
+        try {
+            if (modifyUserImageDto.imageUrl == null || modifyUserImageDto.imageUrl.length == 0)
+                throw new Error;
+            await this.userService.modifyUserImageUrl(user, modifyUserImageDto.imageUrl)
+            res.status(201).send("Image change success!");
+        } catch (err) {
+            console.error('Error reading directory:', err);
+            res.status(500).send("Image change Fail!");
+        }
     }
 }
