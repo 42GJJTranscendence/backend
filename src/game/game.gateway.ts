@@ -9,15 +9,16 @@ import { Socket } from 'socket.io';
 import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
 import { Logger } from '@nestjs/common';
+import { UserStatusService } from 'src/module/users/service/userStatus.service';
 
 @WebSocketGateway({
   namespace: 'game',
-  cors: { origin: process.env.FRONT_DOMAIN, credentials: true}
 })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly gameService: GameService,
-    private readonly authService: AuthService) {}
+    private readonly authService: AuthService,
+    private readonly userStatusService: UserStatusService) {}
 
   async handleConnection(client: Socket) {
     Logger.log("[Game] Player Socket Connect")
@@ -26,6 +27,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user = await this.authService.vaildateUserToken(token);
       Logger.log("[Game] user.id : " + user.id + " | user.username : " + user.username);
+      this.userStatusService.setUserStatus(user.username, 'onGame'); // 게임 상태
       if (user) {
           client.data.user = user;
       } else {
@@ -41,6 +43,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
   handleDisconnect(client: Socket) {
     Logger.log("[Game] Socket Disconnect : " + client.id);
+    this.userStatusService.setUserStatus(client.data.user.username, 'online'); // 온라인 상태
     this.gameService.removeClient(client);
   }
 
