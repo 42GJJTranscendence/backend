@@ -8,9 +8,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Match } from './match/match.entity';
 import { UserService } from 'src/module/users/service/user.service';
 import { User } from 'src/module/users/entity/user.entity';
+import { UsersModule } from 'src/module/users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Match]), Match, TypeOrmModule.forFeature([User]), User, AuthModule,],
+  imports: [TypeOrmModule.forFeature([Match]), Match, TypeOrmModule.forFeature([User]), User, AuthModule, UsersModule],
   providers: [GameGateway, GameService, MatchService, UserService],
   controllers: [GameController],
 })
