@@ -132,6 +132,7 @@ export class AuthService {
         user.username=signInRequestDto.username;
         user.eMail=signInRequestDto.email;
         user.imageUrl = fortyTwoUserDto.image.link;
+        user.fortytwoImageUrl = fortyTwoUserDto.image.link;
         user.fortyTwoId = fortyTwoUserDto.id;
 
         const saltRounds = 10;

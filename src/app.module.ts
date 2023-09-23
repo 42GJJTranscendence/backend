@@ -8,6 +8,8 @@ import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GameModule } from './game/game.module';
 import { ChatModule } from './chat/chat.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [TypeOrmModule.forRoot(typeOrmConfig)
@@ -22,7 +24,7 @@ import { ChatModule } from './chat/chat.module';
           pass: process.env.MAIL_PW,
         },
       },
-    })
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

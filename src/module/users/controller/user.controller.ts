@@ -39,27 +39,4 @@ export class UserController {
         else
             return false;
     }
-
-    // @Post('upload')
-    // @UseInterceptors(FileInterceptor('image', {
-    //     storage: diskStorage({
-    //         destination: './public/images',
-    //         filename: (req, file, callback) => {
-    //             // 기존 이미지 삭제
-    //             const preImageName = `${randomName}${extname(file.originalname)}`
-    //             const imagePath = `./public/images/${req.body.imageName}`;
-    //             if (existsSync(imagePath)) {
-    //                 unlinkSync(imagePath);
-    //             }
-
-    //             // 새로운 이미지 파일 이름 생성
-    //             const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-    //             req.body.imageName = `${randomName}${extname(file.originalname)}`;
-    //             return callback(null, req.body.imageName);
-    //         },
-    //     }),
-    // }))
-    // uploadImage(@UploadedFile() file) {
-    //     // 이미지 업로드가 성공하면 처리할 코드
-    // }
 }
