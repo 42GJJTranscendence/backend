@@ -15,7 +15,7 @@ export class BlackListService {
     async findBlackListsByUser(user: User) {
         return await this.blackListRepository.find({
             where: {
-                user: {id: user.id}
+                user: { id: user.id }
             },
             relations: ['user', 'blackUser'],
         })
@@ -31,6 +31,15 @@ export class BlackListService {
                     blackUser: targetUser,
                 }
             ])
+            .execute();
+    }
+
+    async removeBlackUser(userId: number, targetUserId: number) {
+        await this.blackListRepository
+            .createQueryBuilder()
+            .delete()
+            .where('userId = :userId', { userId })
+            .andWhere('blackUserId = :targetUserId', { targetUserId })
             .execute();
     }
 
