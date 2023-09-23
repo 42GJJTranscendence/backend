@@ -104,7 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const connectedUsers = await Promise.all(connectedUserPromises);
     const blackList = await user.blackLists;
-    const blackListDto = blackList.forEach((bl) => UserDto.from(bl.blackUser));
+    const blackListDto = blackList.map(( bl ) => UserDto.from(bl.blackUser));
     client.emit('res::user::list', { following: following, follower: follower, publicUsers: connectedUsers, blackList: blackListDto});
   }
 

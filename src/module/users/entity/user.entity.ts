@@ -27,6 +27,9 @@ export class User {
   @Column()
   imageUrl: string;
 
+  @Column()
+  fortytwoImageUrl: string;
+
   @OneToMany(() => UserChannel, (userChannel) => userChannel.user)
   userChannel: UserChannel[];
 

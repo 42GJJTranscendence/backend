@@ -6,13 +6,18 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomExceptionFilter } from './common/exception/exception.filter';
 import { SocketAdapter } from './config/socket.adapter';
 import * as cookieParser from 'cookie-parser';
+import * as express from 'express';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 const port = process.env.PORT || 5000;
 
 async function bootstrap() {
 
   console.log(port);
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule,
+  );
   console.log("FRONT DOMAIN", process.env.FRONT_DOMAIN);
 
   //Cors
@@ -23,6 +28,16 @@ async function bootstrap() {
   app.useWebSocketAdapter(new SocketAdapter(app));
 
   app.use(cookieParser());
+
+  console.log(join(__dirname, '.', 'assets/images'));
+  //Avatar images
+  app.useStaticAssets(join(__dirname, '.', 'assets/images'), {
+    prefix: '/images/'
+  })
+
+  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  app.setViewEngine('hbs');
+
   //Swagger
   const config = new DocumentBuilder()
       .setTitle('TS API DOCS')
