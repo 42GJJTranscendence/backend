@@ -22,6 +22,7 @@ import { BlackListModule } from 'src/module/users/black_list/black_list.module';
     BlackListModule,
   ],
   providers: [ChatGateway],
+  exports: [ChatGateway]
 })
 
 export class ChatModule { }

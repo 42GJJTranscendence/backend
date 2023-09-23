@@ -10,6 +10,7 @@ import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
 import { Logger } from '@nestjs/common';
 import { UserStatusService } from 'src/module/users/service/userStatus.service';
+import { ChatGateway } from 'src/chat/chat.gateway';
 
 @WebSocketGateway({
   namespace: 'game',
@@ -18,7 +19,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly gameService: GameService,
     private readonly authService: AuthService,
-    private readonly userStatusService: UserStatusService) {}
+    private readonly userStatusService: UserStatusService,
+    private readonly chatGateway: ChatGateway) {}
 
   async handleConnection(client: Socket) {
     Logger.log("[Game] Player Socket Connect")
@@ -28,6 +30,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user = await this.authService.vaildateUserToken(token);
       Logger.log("[Game] user.id : " + user.id + " | user.username : " + user.username);
       this.userStatusService.setUserStatus(user.username, 'onGame'); // 게임 상태
+      this.chatGateway.sendUserStatusUpdate(user.username, 'onGame');
       if (user) {
           client.data.user = user;
       } else {
@@ -44,6 +47,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     Logger.log("[Game] Socket Disconnect : " + client.id);
     this.userStatusService.setUserStatus(client.data.user.username, 'online'); // 온라인 상태
+    this.chatGateway.sendUserStatusUpdate(client.data.user.username, 'online');
     this.gameService.removeClient(client);
   }
 
