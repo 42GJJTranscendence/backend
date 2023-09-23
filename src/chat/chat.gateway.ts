@@ -51,6 +51,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const user = this.authService.vaildateUserToken(token);
       this.userStatusService.setUserStatus(user.username, 'online'); // 온라인 상태
+      this.sendUserStatusUpdate(user.username, 'online');
       client.data.user = user
       client.data.rooms = new Set<string>();
       this.clients.add(client);
@@ -68,6 +69,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     this.userStatusService.setUserStatus(client.data.user.username, 'offline'); // 온라인 상태
+    this.sendUserStatusUpdate(client.data.user.username, 'offline');
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
 
     client.data.rooms.forEach((roomName) => {
