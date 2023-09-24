@@ -491,6 +491,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   
   public sendUserStatusUpdate(username: string, status: UserStatus) {
+    Logger.log("[Chat] <", username, "> just changed its status to -> [", status, "]");
     const socket = this.findSocketByUsername(username);
     socket.data.status = status;
     this.server.emit('res::userstatus::changed', { username, status });
