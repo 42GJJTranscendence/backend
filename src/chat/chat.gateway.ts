@@ -450,7 +450,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::status')
   async handleUserStatus(client: Socket, payload: any) {
-    client.emit('res::user::status', {status: client.data.status});
+    const socket = this.findSocketByUsername(payload.username);
+    client.emit('res::user::status', {status: socket.data.status});
   }
 
   /* Methods */
