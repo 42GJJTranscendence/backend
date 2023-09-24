@@ -9,8 +9,6 @@ import { Socket } from 'socket.io';
 import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
 import { Logger } from '@nestjs/common';
-import { UserStatusService } from 'src/module/users/service/userStatus.service';
-import { ChatGateway } from 'src/chat/chat.gateway';
 
 @WebSocketGateway({
   namespace: 'game',
@@ -18,9 +16,7 @@ import { ChatGateway } from 'src/chat/chat.gateway';
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly gameService: GameService,
-    private readonly authService: AuthService,
-    private readonly userStatusService: UserStatusService,
-    private readonly chatGateway: ChatGateway) {}
+    private readonly authService: AuthService) {}
 
   async handleConnection(client: Socket) {
     Logger.log("[Game] Player Socket Connect")
@@ -44,19 +40,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
   handleDisconnect(client: Socket) {
     Logger.log("[Game] Socket Disconnect : " + client.id);
-    this.changeUserStatus(client.data.user.username, 'online')
     this.gameService.removeClient(client);
   }
 
   @SubscribeMessage('req::normal::join')
   async joinNormalQueue(client: Socket, data: any): Promise<void> {
-    this.changeUserStatus(client.data.user.username, 'onGame')
     this.gameService.addNormalClient(client);
   }
 
   @SubscribeMessage('req::hard::join')
   async joinHardQueue(client: Socket, data: any): Promise<void> {
-    this.changeUserStatus(client.data.user.username, 'onGame')
     this.gameService.addHardClient(client);
   }
 
@@ -64,8 +57,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('req::game::invite')
   async HandleInviteGame(client: Socket, data: any): Promise<void> {
     const myName = client.data.user.username;
-    this.changeUserStatus(client.data.user.username, 'onGame')
-
     if (data.homeName == myName)
     {
       data.myPos = "home"
@@ -81,10 +72,5 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('req::user::move')
   async handlePlayerMessage(client: Socket, data: any): Promise<void> {
     this.gameService.movePlayerPosition(client, data);
-  }
-
-  private changeUserStatus(username: string, status: string) {
-    this.userStatusService.setUserStatus(username, status); // 게임 상태
-    this.chatGateway.sendUserStatusUpdate(username, status);
   }
 }

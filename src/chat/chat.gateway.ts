@@ -22,7 +22,7 @@ import { ChannelBanned } from './channel_banned/channel_banned.entity';
 import { ChannelBannedService } from './channel_banned/channel_banned.service';
 import { ChannelMuteService } from './channel_mute/channel_mute.service';
 import { BlackListService } from 'src/module/users/black_list/black_list.service';
-import { UserStatusService } from 'src/module/users/service/userStatus.service';
+import { UserStatus } from 'src/common/enums';
 
 @WebSocketGateway({
   namespace: 'chat',
@@ -37,8 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly channelMuteService: ChannelMuteService,
     private readonly messageService: MessageService,
     private readonly friendService: FriendService,
-    private readonly blackListService: BlackListService,
-    private readonly userStatusService: UserStatusService) { }
+    private readonly blackListService: BlackListService) { }
 
   @WebSocketServer()
   server: Server;
@@ -50,14 +49,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
-      this.userStatusService.setUserStatus(user.username, 'online'); // 온라인 상태
-      this.sendUserStatusUpdate(user.username, 'online');
       client.data.user = user
       client.data.rooms = new Set<string>();
       this.clients.add(client);
-
+      
       const userDto = UserDto.from(await this.userService.findOneByUsername(user.username));
       this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl });
+      this.sendUserStatusUpdate(user.username, UserStatus.ONLINE);
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
@@ -66,19 +64,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    this.userStatusService.setUserStatus(client.data.user.username, 'offline'); // 온라인 상태
-    this.sendUserStatusUpdate(client.data.user.username, 'offline');
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
-
+    
     client.data.rooms.forEach((roomName) => {
       this.leaveRoom(client, roomName);
     });
     console.log("Chat-Socket : User leave room ", client.data.rooms);
-
+    
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
+    this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
+    this.clients.delete(client);
   }
 
   @SubscribeMessage('req::user::list')
@@ -451,8 +448,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('req::user::status')
   async handleUserStatus(client: Socket, payload: any) {
-    const userStatus = this.userStatusService.getUserStatus(payload.username);
-    client.emit('res::user::status', {status: userStatus});
+    const socket = this.findSocketByUsername(payload.username);
+    client.emit('res::user::status', {status: socket.data.status});
   }
 
   /* Methods */
@@ -493,7 +490,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return null;
   }
   
-  public sendUserStatusUpdate(username: string, status: string) {
-    this.server.emit('user::status::changed', { username, status });
+  public sendUserStatusUpdate(username: string, status: UserStatus) {
+    const socket = this.findSocketByUsername(username);
+    socket.data.status = status;
+    this.server.emit('res::userstatus::changed', { username, status });
   }
 }
