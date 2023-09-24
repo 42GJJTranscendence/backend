@@ -23,7 +23,7 @@ export class MatchService {
             order: {
                 start_at: 'DESC',
             },
-            relations: ['userHomeId', 'userAwayId']
+            relations: ['userHomeId', 'userAwayId', 'winnerId']
         })
 
         console.log(matches);
