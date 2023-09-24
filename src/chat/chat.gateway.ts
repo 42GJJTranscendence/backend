@@ -49,11 +49,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const token = Array.isArray(client.handshake.query.token) ? client.handshake.query.token[0] : client.handshake.query.token;
     try {
       const user = this.authService.vaildateUserToken(token);
-      this.sendUserStatusUpdate(user.username, UserStatus.ONLINE);
       client.data.user = user
       client.data.rooms = new Set<string>();
-      client.data.status = UserStatus.ONLINE;
       this.clients.add(client);
+      this.sendUserStatusUpdate(user.username, UserStatus.ONLINE);
 
       const userDto = UserDto.from(await this.userService.findOneByUsername(user.username));
       this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl });
