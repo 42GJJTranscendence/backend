@@ -61,10 +61,10 @@ export class GameSession {
     this.playerName.away = this.awayPlayer.socket.data.user.username
     this.initialize();
 
-    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
-    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
     this.chatGateway.sendUserStatusUpdate(this.playerName.home, UserStatus.ONGAME);
     this.chatGateway.sendUserStatusUpdate(this.playerName.away, UserStatus.ONGAME);
+    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
   }
 
   async initialize(): Promise<void> {
