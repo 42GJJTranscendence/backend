@@ -64,7 +64,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
     
@@ -75,7 +74,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
-    // this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
+    this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
+    this.clients.delete(client);
   }
 
   @SubscribeMessage('req::user::list')
