@@ -421,14 +421,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
     
-    Logger.log("[Chat - Approve Game] clientStatus: ", client.data.user.status)
-    Logger.log("[Chat - Approve Game] HomeSocketStatus: ", homeSocket.data.user.status)
+    Logger.log("[Chat - Approve Game] clientStatus: ", payload.homeName)
+    Logger.log("[Chat - Approve Game] clientStatus: ", payload)
+    Logger.log("[Chat - Approve Game] clientStatus: ", client.data.status)
+    Logger.log("[Chat - Approve Game] HomeSocketStatus: ", homeSocket.data.status)
     if (homeSocket) {
       if (homeSocket.data.status === UserStatus.ONGAME)
       {
         Logger.log("[Chat - Approve Game] Home ONGAME");
         homeSocket.emit('res::invite::error', '게임이 거절되었습니다.');
-        client.emit('res::invite::error', `${homeSocket.data.user.username}이(가) 현재 게임 중입니다.`);
+        client.emit('res::invite::error', `${homeSocket.data.username}이(가) 현재 게임 중입니다.`);
         return ;  
       }
       else if (client.data.status === UserStatus.ONGAME)
