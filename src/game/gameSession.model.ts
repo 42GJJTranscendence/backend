@@ -25,9 +25,10 @@ export class GameSession {
   private matchService: MatchService;
   private userService: UserService;
   private isGameOn: boolean;
-  private readonly chatGateway: ChatGateway;
-
+  private chatGateway: ChatGateway;
+  
   constructor(
+    chatGateway: ChatGateway,
     homeSocket: Socket,
     awaySocket: Socket,
     onGameEnd: (session: GameSession) => void,
@@ -55,6 +56,7 @@ export class GameSession {
     this.onGameEnd = onGameEnd;
     this.matchService = matchService;
     this.userService = userService;
+    this.chatGateway = chatGateway;
 
 
     this.playerName.home = this.homePlayer.socket.data.user.username

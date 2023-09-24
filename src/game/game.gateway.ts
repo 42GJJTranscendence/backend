@@ -16,7 +16,8 @@ import { Logger } from '@nestjs/common';
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly gameService: GameService,
-    private readonly authService: AuthService) {}
+    private readonly authService: AuthService,
+    ) {}
 
   async handleConnection(client: Socket) {
     Logger.log("[Game] Player Socket Connect")

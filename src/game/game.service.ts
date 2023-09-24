@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { MatchService } from './match/match.service';
 import { UserService } from 'src/module/users/service/user.service';
+import { ChatGateway } from 'src/chat/chat.gateway';
 
 @Injectable()
 export class GameService {
@@ -14,7 +15,8 @@ export class GameService {
 
 	constructor(
 		private readonly matchService: MatchService,
-		private readonly userService: UserService
+		private readonly userService: UserService,
+		private readonly chatGateway: ChatGateway
 	  ) {}
 	
 	// disconnect 될 때
@@ -42,7 +44,7 @@ export class GameService {
 			}
 			else
 			{
-				const gameSession = new GameSession(client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
+				const gameSession = new GameSession(this.chatGateway, client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
 				this.inviteSockets.delete(data.homeName);
 				this.inviteSockets.delete(data.awayName);
@@ -56,7 +58,7 @@ export class GameService {
 			}
 			else
 			{
-				const gameSession = new GameSession(this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
+				const gameSession = new GameSession(this.chatGateway, this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
 				this.inviteSockets.delete(data.homeName);
 				this.inviteSockets.delete(data.awayName);
@@ -82,7 +84,7 @@ export class GameService {
 			const homePlayerSocket = this.normalQueue.dequeue();
 			const awayPlayerSocket = this.normalQueue.dequeue();
 
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 10);
+			const gameSession = new GameSession(this.chatGateway, homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 10);
 			this.gameSessions.push(gameSession);
 		}
 	}
@@ -105,7 +107,7 @@ export class GameService {
 			const homePlayerSocket = this.hardQueue.dequeue();
 			const awayPlayerSocket = this.hardQueue.dequeue();
 
-			const gameSession = new GameSession(homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 20);
+			const gameSession = new GameSession(this.chatGateway, homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 20);
 			this.gameSessions.push(gameSession);
 		}
 	}
