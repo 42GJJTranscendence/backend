@@ -14,10 +14,10 @@ const port = process.env.PORT || 5000;
 async function bootstrap() {
 
   console.log(port);
+  console.log("FRONT DOMAIN", process.env.FRONT_DOMAIN);
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
   );
-  console.log("FRONT DOMAIN", process.env.FRONT_DOMAIN);
 
   //Cors
   app.enableCors({
@@ -28,7 +28,6 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  console.log(join(__dirname, '.', 'assets/images'));
   //Avatar images
   app.useStaticAssets(join(__dirname, '.', 'assets/images'), {
     prefix: '/images/'

@@ -11,11 +11,12 @@ import { User } from 'src/module/users/entity/user.entity';
 import { UsersModule } from 'src/module/users/users.module';
 import { ChatModule } from 'src/chat/chat.module';
 import { PassportModule } from '@nestjs/passport';
+import { MatchController } from './match/match.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Match]), Match, TypeOrmModule.forFeature([User]), User, AuthModule, UsersModule, ChatModule,
   PassportModule.register({ defaultStrategy: 'jwt' }),],
   providers: [GameGateway, GameService, MatchService, UserService],
-  controllers: [GameController],
+  controllers: [GameController, MatchController],
 })
 export class GameModule { }
