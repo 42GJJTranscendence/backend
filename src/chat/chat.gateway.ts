@@ -75,7 +75,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
-    this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
+    // this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
   }
 
   @SubscribeMessage('req::user::list')
