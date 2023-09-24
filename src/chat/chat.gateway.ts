@@ -52,10 +52,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.user = user
       client.data.rooms = new Set<string>();
       this.clients.add(client);
-      this.sendUserStatusUpdate(user.username, UserStatus.ONLINE);
-
+      
       const userDto = UserDto.from(await this.userService.findOneByUsername(user.username));
       this.server.emit('res::user::connect', { id: userDto.id, username: userDto.username, imageUrl: userDto.imageUrl });
+      this.sendUserStatusUpdate(user.username, UserStatus.ONLINE);
       console.log("Chat-Socket : <", user.username, "> connect Chat-Socket.")
     } catch (error) {
       console.log(error.response);
@@ -66,17 +66,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     this.clients.delete(client);
     const userInfo = { id: client.data.user.id, username: client.data.user.username };
-    client.data.status = UserStatus.OFFLINE;
-    this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
     console.log("Chat-Socket : <", userInfo.username, "> disconnect Chat-Socket");
-
+    
     client.data.rooms.forEach((roomName) => {
       this.leaveRoom(client, roomName);
     });
     console.log("Chat-Socket : User leave room ", client.data.rooms);
-
+    
     this.server.emit('res::user::disconnect', userInfo);
     this.server.emit('connection', 'disconnected');
+    // this.sendUserStatusUpdate(client.data.user.username, UserStatus.OFFLINE);
   }
 
   @SubscribeMessage('req::user::list')
