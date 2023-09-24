@@ -49,7 +49,9 @@ export class ChannelService {
         // console.log('QUERY OUTPUT : ', channel);
 
         // channel.forEach ((channel) => console.log(channel.userChannel.length));
+        console.log("UNFILTERED CHANNEL: ", channel);
         channel = channel.filter((c) => c.userChannel.length == 2)
+        console.log("FILTERED CHANNEL");
         if (channel.length == 0)
             return null;
         else if (channel.length >= 1)
