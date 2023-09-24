@@ -5,14 +5,16 @@ import { Match } from './match/match.entity';
 import { MatchService } from './match/match.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from 'src/module/users/service/user.service';
+import { ChatGateway } from 'src/chat/chat.gateway';
+import { UserStatus } from 'src/common/enums';
 
 export class GameSession {
   private roomName: string;
   private homePlayer: Player;
   private awayPlayer: Player;
+  private playerName = { home: "", away: ""}
   private moveBall: NodeJS.Timer;
   private scores = { home: 0, away: 0 };
-  private players = { home: "", away: "" };
   private imgUrl = { home: "", away: "" };
   private onGameEnd: (session: GameSession) => void;
   private width: number = 1300;
@@ -23,6 +25,7 @@ export class GameSession {
   private matchService: MatchService;
   private userService: UserService;
   private isGameOn: boolean;
+  private readonly chatGateway: ChatGateway;
 
   constructor(
     homeSocket: Socket,
@@ -54,17 +57,19 @@ export class GameSession {
     this.userService = userService;
 
 
-    this.players.home = this.homePlayer.socket.data.user.username
-    this.players.away = this.awayPlayer.socket.data.user.username
+    this.playerName.home = this.homePlayer.socket.data.user.username
+    this.playerName.away = this.awayPlayer.socket.data.user.username
     this.initialize();
 
-    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.players);
-    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.players);
+    this.homePlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
+    this.awayPlayer.socket.to(this.roomName).emit('res::player::join',this.playerName);
+    this.chatGateway.sendUserStatusUpdate(this.playerName.home, UserStatus.ONGAME);
+    this.chatGateway.sendUserStatusUpdate(this.playerName.away, UserStatus.ONGAME);
   }
 
   async initialize(): Promise<void> {
-    const homeUser = await this.userService.findOneByUsername(this.players.home);
-    const awayUser = await this.userService.findOneByUsername(this.players.away);
+    const homeUser = await this.userService.findOneByUsername(this.playerName.home);
+    const awayUser = await this.userService.findOneByUsername(this.playerName.away);
 
     if (homeUser && awayUser) {
         this.imgUrl.home = homeUser.imageUrl;
@@ -109,6 +114,8 @@ export class GameSession {
       const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
       this.homePlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'lose' : 'win');
       this.awayPlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'win' : 'lose');
+      this.chatGateway.sendUserStatusUpdate(this.playerName.home, UserStatus.ONLINE);
+      this.chatGateway.sendUserStatusUpdate(this.playerName.away, UserStatus.ONLINE);
       this.matchService.createMatch(match); // DB 저장
     }
     this.stopGameLoop()
@@ -221,6 +228,8 @@ export class GameSession {
   leaveRoom() {
     this.homePlayer.socket.leave(this.roomName);
     this.awayPlayer.socket.leave(this.roomName);
+    this.chatGateway.sendUserStatusUpdate(this.playerName.home, UserStatus.ONLINE);
+    this.chatGateway.sendUserStatusUpdate(this.playerName.away, UserStatus.ONLINE);
   }
 
   movePlayerPosition(client: Socket, data: any) {
