@@ -424,12 +424,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (homeSocket) {
       if (homeSocket.data.status === UserStatus.ONGAME)
       {
+        Logger.log("[Chat - Approve Game] Home ONGAME");
         homeSocket.emit('res::invite::error', '게임이 거절되었습니다.');
         client.emit('res::invite::error', `${homeSocket.data.user.username}이(가) 현재 게임 중입니다.`);
         return ;  
       }
       else if (client.data.status === UserStatus.ONGAME)
       {
+        Logger.log("[Chat - Approve Game] Away ONGAME");
         homeSocket.emit('res::invite::error', '게임이 거절되었습니다.');
         client.emit('res::invite::error', '현재 게임 중에는 다른 게임을 수락할 수 없습니다.');
         return ;
