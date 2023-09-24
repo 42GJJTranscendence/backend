@@ -16,7 +16,7 @@ export class MatchDto{
         matchDto.userHome = UserDto.from(match.userHomeId);
         matchDto.userAway = UserDto.from(match.userAwayId);
         matchDto.winner = UserDto.from(match.winnerId);
-        matchDto.user_home_score = match.user_away_score;
+        matchDto.user_home_score = match.user_home_score;
         matchDto.user_away_score = match.user_away_score;
         return matchDto;
     }
