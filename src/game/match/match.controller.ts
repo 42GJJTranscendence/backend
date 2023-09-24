@@ -1,6 +1,7 @@
 import { Get, Controller, Param, Query, NotFoundException } from "@nestjs/common";
 import { MatchService } from "./match.service";
 import { UserService } from 'src/module/users/service/user.service';
+import { MatchDto } from "./match.dto";
 
 @Controller('match')
 export class MatchController {
@@ -18,6 +19,6 @@ export class MatchController {
             throw new NotFoundException(`User with username ${username} not found`);
         }
         const matches = await this.matchService.getMatches(user);
-        return matches;
+        return matches.map((m) => MatchDto.from(m));
     }
 }
