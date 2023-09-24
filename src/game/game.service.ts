@@ -5,6 +5,7 @@ import { Socket } from 'socket.io';
 import { MatchService } from './match/match.service';
 import { UserService } from 'src/module/users/service/user.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
+import { UserStatus } from 'src/common/enums';
 
 @Injectable()
 export class GameService {
@@ -75,6 +76,7 @@ export class GameService {
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
+		this.chatGateway.sendUserStatusUpdate(client.data.user.username, UserStatus.ONGAME);
 		this.normalQueue.enqueue(client);
 		this.tryMatchNormalClients();
 	}
@@ -98,6 +100,7 @@ export class GameService {
 			client.emit('error', { message: 'You are already in the queue!' });
 			return;
 		}
+		this.chatGateway.sendUserStatusUpdate(client.data.user.username, UserStatus.ONGAME);
 		this.hardQueue.enqueue(client);
 		this.tryMatchHardClients();
 	}
