@@ -10,6 +10,7 @@ import { channel } from "diagnostics_channel";
 import * as bcrypt from 'bcrypt';
 import { createChannelRequestDto, joinChannelRequestDto } from "./channel.dto";
 import { ChannelBannedService } from "../channel_banned/channel_banned.service";
+import { ChannelType } from "src/common/enums";
 
 @Controller('channels')
 export class ChannelController {
@@ -58,7 +59,8 @@ export class ChannelController {
     @Delete('/leave/:channelId')
     @UseGuards(AuthGuard())
     async leaveChannel(@Param('channelId') channelId: number, @GetUser() user: User, @Res() res) {
-        if (await this.userChannelService.isUserJoinedChannel(user.id, channelId)) {
+        if (await this.userChannelService.isUserJoinedChannel(user.id, channelId)
+            && (await this.channelService.findOneById(channelId)).type != ChannelType.DIRECT) {
             await this.userChannelService.removeUserFromChannel(user.id, channelId);
             res.status(200).send("Leaved!");
         }

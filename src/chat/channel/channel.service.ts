@@ -44,14 +44,7 @@ export class ChannelService {
             .andWhere('user.id IN (:user1Id, :user2Id)', { user1Id, user2Id })
             .groupBy('channel.id, userChannel.id')
             .getMany();
-        // console.log(channel.getQuery())
-        // console.log('FINDING USER : ', user1Id, ' ', user2Id);
-        // console.log('QUERY OUTPUT : ', channel);
-
-        // channel.forEach ((channel) => console.log(channel.userChannel.length));
-        console.log("UNFILTERED CHANNEL: ", channel);
         channel = channel.filter((c) => c.userChannel.length == 2)
-        console.log("FILTERED CHANNEL");
         if (channel.length == 0)
             return null;
         else if (channel.length >= 1)
@@ -60,7 +53,6 @@ export class ChannelService {
             console.log("CHANNEL_LENGTH : ", channel.length);
             throw new Error;
         }
-        // return channel || null;
     }
 
     async createDirectChannelForUser(user1: User, user2: User): Promise<Channel | null> {
