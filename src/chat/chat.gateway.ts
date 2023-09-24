@@ -420,7 +420,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleApproveGame(client: Socket, payload: any) {
     const homeUserName = payload.homeName;
     const homeSocket = this.findSocketByUsername(homeUserName);
-
+    
+    Logger.log("[Chat - Approve Game] clientStatus: ", client.data.user.status)
+    Logger.log("[Chat - Approve Game] HomeSocketStatus: ", homeSocket.data.user.status)
     if (homeSocket) {
       if (homeSocket.data.status === UserStatus.ONGAME)
       {
