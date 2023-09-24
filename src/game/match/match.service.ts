@@ -25,9 +25,7 @@ export class MatchService {
             },
             relations: ['userHomeId', 'userAwayId', 'winnerId']
         })
-
-        console.log(matches);
-
+        
         return matches;
     }
 

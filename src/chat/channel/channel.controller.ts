@@ -53,7 +53,7 @@ export class ChannelController {
             res.status(200).send("Deleted!");
         }
         else
-            res.status(401).send("You are not owner of channel");
+            res.status(403).send("You are not owner of channel");
     }
 
     @Delete('/leave/:channelId')
@@ -65,7 +65,7 @@ export class ChannelController {
             res.status(200).send("Leaved!");
         }
         else
-            res.status(401).send("You are not member of channel");
+            res.status(403).send("You are not member of channel");
     }
 
     @Post('/join')
