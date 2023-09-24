@@ -20,8 +20,8 @@ export class MatchService {
     async getMatches(user: User) : Promise<Match[]> {
         const matches = await this.matchRepository
             .createQueryBuilder('match')
-            .where('match.user_home = :userId', { userId: user.id })
-            .orWhere('match.user_away = :userId', { userId: user.id })
+            .where('match.userHomeIdId = :userId', { userId: user.id })
+            .orWhere('match.userAwayIdId = :userId', { userId: user.id })
             .orderBy('match.start_at', 'DESC')
             .getMany();
     
