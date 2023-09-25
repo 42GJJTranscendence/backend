@@ -39,17 +39,16 @@ export class AuthService {
         }
     }
 
-    async check2FACode(username : string, code: string): Promise<string | undefined> {
-        const userFind : User = await this.userService.findOneByUsername(username);
-        if (userFind == null)
+    async check2FACode(user: User, code: string): Promise<string | undefined> {
+        if (user == null)
             throw new UnauthorizedException('Can\'t find username');
 
-        const email = userFind.eMail;
+        const email = user.eMail;
         const codeFind = this.emailCode[email];
         if (codeFind == null || codeFind != code)
             throw new UnauthorizedException('Email authorize faile.');
         else {
-            const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
+            const payload: Payload = { id: user.id, username: user.username, fortyTwoId: user.fortyTwoId};
             this.emailCode.delete(email);
             return Promise.resolve(this.jwtService.sign(payload));
         }
@@ -142,14 +141,15 @@ export class AuthService {
         const createdUser = await this.userService.createUser(user);
     }
 
-    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise<string | undefined> {
+    async validateUserPassword(logInRequestDto: LogInRequestDto): Promise< { email: string, jwtToken: string } | undefined> {
         let userFind: User = await this.userService.findOneByUsername(logInRequestDto.username);
         const validatePassword = await bcrypt.compare(logInRequestDto.password, userFind.password);
         if(!userFind || !validatePassword) {
             throw new UnauthorizedException('Invalid password');
         }
+        const payload: Payload = { id: userFind.id, username: userFind.username, fortyTwoId: userFind.fortyTwoId};
 
-        return Promise.resolve( userFind.eMail );
+        return Promise.resolve( { email: userFind.eMail, jwtToken: this.jwtService.sign(payload) });
     }
 
     vaildateUserToken(token: string) {
