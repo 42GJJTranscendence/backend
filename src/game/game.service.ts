@@ -45,9 +45,9 @@ export class GameService {
 			}
 			else
 			{
+				Logger.log("[Game - Invite (home)] home name : " + client.data.user.username + " || away name : " + data.awayName);
 				const gameSession = new GameSession(this.chatGateway, client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
-				Logger.log("[Game - Invite (home)] GameSession Lenght : " + this.gameSessions.length);
 				this.inviteSockets.delete(data.homeName);
 				this.inviteSockets.delete(data.awayName);
 			}
@@ -60,6 +60,7 @@ export class GameService {
 			}
 			else
 			{
+				Logger.log("[Game - Invite (away)] home name : " + data.homeName + " || away name : " + client.data.user.username);
 				const gameSession = new GameSession(this.chatGateway, this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
 				Logger.log("[Game - Invite (away)] GameSession Lenght : " + this.gameSessions.length);
@@ -129,6 +130,7 @@ export class GameService {
 		{
 			this.hardQueue.remove(client);
 		}
+		this.inviteSockets.delete(client.data.user.username);
         this.endSessionForClient(client);
     }
 	
