@@ -47,6 +47,7 @@ export class GameService {
 			{
 				const gameSession = new GameSession(this.chatGateway, client, this.inviteSockets[data.awayName], this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
+				Logger.log("[Game - Invite (home)] GameSession Lenght : " + this.gameSessions.length);
 				this.inviteSockets.delete(data.homeName);
 				this.inviteSockets.delete(data.awayName);
 			}
@@ -61,6 +62,7 @@ export class GameService {
 			{
 				const gameSession = new GameSession(this.chatGateway, this.inviteSockets[data.homeName], client, this.endSession, this.matchService, this.userService, 10);
 				this.gameSessions.push(gameSession);
+				Logger.log("[Game - Invite (away)] GameSession Lenght : " + this.gameSessions.length);
 				this.inviteSockets.delete(data.homeName);
 				this.inviteSockets.delete(data.awayName);
 			}
@@ -88,6 +90,7 @@ export class GameService {
 
 			const gameSession = new GameSession(this.chatGateway, homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 10);
 			this.gameSessions.push(gameSession);
+			Logger.log("[Game - Normal] GameSession Lenght : " + this.gameSessions.length);
 		}
 	}
 	
@@ -112,6 +115,7 @@ export class GameService {
 
 			const gameSession = new GameSession(this.chatGateway, homePlayerSocket, awayPlayerSocket, this.endSession, this.matchService, this.userService, 20);
 			this.gameSessions.push(gameSession);
+			Logger.log("[Game - Hard] GameSession Lenght : " + this.gameSessions.length);
 		}
 	}
 
