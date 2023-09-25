@@ -78,25 +78,4 @@ export class AuthController {
         res.cookie('access_token', jwtAccessToken, cookieOptions);
         res.send(jwtAccessToken)
     }
-
-    @Get('/test')
-    @UseGuards(AuthGuard())
-    async AuthTest(@GetUser() user : User, @Res() res, @Req() req) {
-        console.log('req', user);
-        res.send(200, user.username);
-        console.log(req.cookies);
-    }
-
-    @Get('/cookie')
-    async CookieTest(@Res() res) {
-        const jwtAccessToken =  await this.authService.check2FACode('jaehyuki', '123');
-        const cookieOptions = {
-            httpOnly: true,
-            maxAge: 36000,
-        };
-        
-        res.cookie('access_token', jwtAccessToken, cookieOptions);
-        res.send(jwtAccessToken);
-    }
-
 }
