@@ -46,7 +46,7 @@ export class GameSession {
       this.paddleLength,
       awaySocket,
     );
-    this.roomName = `game-${homeSocket.data.user.username}-${awaySocket.data.user.username}`;
+    this.roomName = `game-${homeSocket.id}-${awaySocket.id}`;
 
     homeSocket.join(this.roomName);
     awaySocket.join(this.roomName);
