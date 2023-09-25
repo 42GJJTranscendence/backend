@@ -37,9 +37,9 @@ export class AuthController {
 
     @Post('/login')
     async UserLogin(@Body() logInRequestDto : LogInRequestDto, @Res() res) : Promise<any>{
-        const userEmail = await this.authService.validateUserPassword(logInRequestDto);
+        const twoFAattribute = await this.authService.validateUserPassword(logInRequestDto);
 
-        return res.send(userEmail);
+        return res.send(twoFAattribute);
     }
 
     @Get('/check/duplication')
@@ -67,10 +67,9 @@ export class AuthController {
     }
 
     @Get('/login/verification/email/check')
-    async checkVerificationMailLogInCode(@Query('username') username : string, @Query('code') code : string, @Res() res) {
-        console.log("2FA REQ {username :", username,"\ncode :", code, "}");
-
-        const jwtAccessToken =  await this.authService.check2FACode(username, code);
+    @UseGuards(AuthGuard())
+    async checkVerificationMailLogInCode(@Query('code') code : string,@GetUser() user : User, @Res() res) {
+        const jwtAccessToken =  await this.authService.check2FACode(user, code);
         const cookieOptions = {
             httpOnly: true,
             maxAge: 36000,
