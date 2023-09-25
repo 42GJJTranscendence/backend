@@ -116,8 +116,7 @@ export class GameSession {
       const match = client === this.homePlayer.socket ? this.makeMatch('away') : this.makeMatch('home')
       this.homePlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'lose' : 'win');
       this.awayPlayer.socket.emit('res::game::result', (client === this.homePlayer.socket) ? 'win' : 'lose');
-      this.chatGateway.sendUserStatusUpdate(this.playerName.home, UserStatus.ONLINE);
-      this.chatGateway.sendUserStatusUpdate(this.playerName.away, UserStatus.ONLINE);
+      this.leaveRoom();
       this.matchService.createMatch(match); // DB 저장
     }
     this.stopGameLoop()
